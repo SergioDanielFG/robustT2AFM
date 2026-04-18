@@ -1,0 +1,48 @@
+Package: robustT2AFM
+Title: AFM-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes
+Version: 0.1.0
+Authors@R: c(
+    person("Sergio Daniel", "Frutos Galarza", , "sergio_dan88@hotmail.com",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0007-2961-032X")),
+    person("Omar", "Ruiz Barzola", , "oruiz@espol.edu.ec",
+           role = "aut",
+           comment = c(ORCID = "0000-0001-8206-1744")),
+    person("Jhon", "Ramirez", , "jramirez@espol.edu.ec",
+           role = "aut"),
+    person("Purificacion", "Galindo Villardon", , "pgalindo@usal.es",
+           role = "aut",
+           comment = c(ORCID = "0000-0001-6977-7545"))
+  )
+Description: Implements a robust multivariate statistical process control
+    methodology for batch manufacturing that combines Minimum Covariance
+    Determinant (MCD) estimation per batch with Multiple Factor Analysis
+    (AFM) weighting. The methodology detects masking effects produced by
+    outlier contamination in Phase I calibration data and preserves
+    sensitivity to mean shifts in Phase II monitoring. The package
+    provides bootstrap-calibrated upper control limits, baseline
+    comparison with classical Hotelling T-squared and Vargas (2003)
+    robust T-squared, and visual diagnostic panels based on
+    Mason-Tracy-Young (1995) decomposition and confidence ellipses.
+    Methodology based on Ruiz-Barzola et al. (2026) and
+    Rousseeuw and Van Driessen (1999) <doi:10.1080/00401706.1999.10485670>.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.0)
+Imports:
+    stats,
+    MASS,
+    robustbase
+Suggests:
+    ggplot2,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    covr
+Language: en-US
+URL: https://github.com/SergioDanielFG/robustT2AFM
+BugReports: https://github.com/SergioDanielFG/robustT2AFM/issues

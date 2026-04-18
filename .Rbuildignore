@@ -1,0 +1,13 @@
+^robustT2AFM\.Rproj$
+^\.Rproj\.user$
+^data-raw$
+^README\.Rmd$
+^\.github$
+^doc$
+^Meta$
+^cran-comments\.md$
+^\.lintr$
+^tests/testthat/_snaps$
+^\.covrignore$
+^CLAUDE\.md$
+^LICENSE\.md$
