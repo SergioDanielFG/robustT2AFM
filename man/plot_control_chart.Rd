@@ -100,8 +100,8 @@ plot_control_chart(
 #                    save_path = file.path(tempdir(), "phase2_chart"))
 }
 \references{
-Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality
-Control} (8th ed.). Wiley. Chapter 11.
+Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality
+Control}, 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Chapter 11.
 
 Wickham, H. (2016). \emph{ggplot2: Elegant Graphics for Data Analysis}
 (2nd ed.). Springer.

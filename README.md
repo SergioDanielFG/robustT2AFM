@@ -49,11 +49,12 @@ remotes::install_github("SergioDanielFG/robustT2AFM")
 
 ## Citation
 
-Frutos Galarza, S. D., Ruiz Barzola, O., Ramirez, J., Galindo Villardon, P.
-(2026). AFM-Weighted Robust T-Squared Control Chart with Bootstrap UCL
-for Batch Processes under Phase I Contamination. Manuscript in preparation.
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramírez, J., Galindo-Villardón, P.
+(2026). A Robust Hotelling-Type T2 Control Chart Combining the Minimum
+Covariance Determinant Estimator with Multiple Factor Analysis Weighting.
+Manuscript in preparation.
 
 ## License
 
-MIT (c) 2026 Sergio Daniel Frutos Galarza, Omar Ruiz Barzola,
-Jhon Ramirez, Purificacion Galindo Villardon
+MIT (c) 2026 Sergio Daniel Frutos-Galarza, Omar Ruiz-Barzola,
+Jhon Ramírez, Purificación Galindo-Villardón

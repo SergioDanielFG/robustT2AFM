@@ -13,7 +13,7 @@ ucl_F_adjusted(calibration, I, alpha = 0.001)
 
 \item{alpha}{Numeric in (0, 1). Nominal false alarm rate. Default 0.001
 (European convention, in-control ARL0 = 1000), matching the value used
-in Ruiz-Barzola et al. (2026). Change to 0.0027 to obtain 3-sigma limits.}
+in Frutos-Galarza et al. (2026). Change to 0.0027 to obtain 3-sigma limits.}
 }
 \value{
 A list containing:
@@ -26,7 +26,7 @@ A list containing:
 \description{
 Computes the Upper Control Limit for the Phase 2 Hotelling T-squared statistic
 using the F-distribution approach with effective sample size correction.
-This is the "Way 1" UCL proposed by Ruiz-Barzola et al. (2026), where the
+This is the "Way 1" UCL proposed by Frutos-Galarza et al. (2026), where the
 effective batch size m* = round(I * h) replaces I in the degrees of freedom
 to account for the reduction of sample size due to MCD trimming. The
 Hardin-Rocke correction is NOT applied.
@@ -52,7 +52,7 @@ sim    <- simulate_batch_process(
 vars   <- paste0("Var", 1:4)
 cal    <- calibrate_afm_mcd(subset(sim, Phase == "Phase 1"), vars)
 
-# F-adjusted UCL (operational default in Ruiz-Barzola et al. 2026).
+# F-adjusted UCL (operational default in Frutos-Galarza et al. 2026).
 ucl <- ucl_F_adjusted(cal, I = 20)
 cat(sprintf("UCL = \%.2f  (m* = \%d, df2 = \%d, alpha = \%.3f)\n",
             ucl$UCL, ucl$parameters$m_star,
@@ -63,6 +63,6 @@ mon <- monitor_afm_mcd(subset(sim, Phase == "Phase 2"), cal, vars)
 sum(mon$T2 > ucl$UCL)                    # number of alarms
 }
 \references{
-Montgomery, D. C. (2019). Introduction to Statistical Quality Control
-(8th ed.). Wiley.
+Montgomery, D. C. (2009). Introduction to Statistical Quality Control,
+6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6.
 }

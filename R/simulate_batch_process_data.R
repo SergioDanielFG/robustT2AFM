@@ -8,7 +8,7 @@
 #' @param K1 Integer. Number of Phase 1 batches. Default 30.
 #' @param K2 Integer. Number of Phase 2 batches. Default 20.
 #' @param I Integer. Observations per batch. Default 20 (value used in
-#'   Ruiz-Barzola et al. 2026).
+#'   Frutos-Galarza et al. 2026).
 #' @param J Integer. Number of process variables. Default 4.
 #' @param mu Numeric vector of length J. Default zero vector.
 #' @param Sigma Covariance matrix J x J. If NULL, equicorrelation with correlation rho.
@@ -53,7 +53,7 @@
 #' @examples
 #' # Realistic Phase 1 with within-batch outliers (2 batches) and fully-
 #' # shifted batches (~7%), plus Phase 2 with 30% OOC. Package defaults
-#' # (K1=30, K2=20, I=20, J=4) match Ruiz-Barzola et al. (2026).
+#' # (K1=30, K2=20, I=20, J=4) match Frutos-Galarza et al. (2026).
 #' sim <- simulate_batch_process(
 #'   outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
 #'   prop_contam_F1 = 0.07, shift_contam = 3,

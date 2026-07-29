@@ -17,7 +17,7 @@ Must be at least 2.}
 \item{alpha}{Numeric in (0, 1). Family-wise false-alarm probability. Default
 0.001 (European convention, in-control ARL0 = 1000), used throughout the
 package for consistency with \code{\link{ucl_F_adjusted}} and matching
-Ruiz-Barzola et al. (2026). Change to 0.0027 to obtain 3-sigma limits.}
+Frutos-Galarza et al. (2026). Change to 0.0027 to obtain 3-sigma limits.}
 
 \item{phase}{Character. Either "I" (retrospective limits, Montgomery
 eq. 11.20) or "II" (prospective limits, Montgomery eq. 11.21). Default "II".}
@@ -36,13 +36,13 @@ scale_factor, F_quantile used.}
 Computes the exact F-distribution-based Upper Control Limit for the
 Hotelling T-squared chart with subgrouped data, in either the Phase 1
 (retrospective) or Phase 2 (prospective) form derived by Tracy, Young, and
-Mason (1992) and tabulated by Montgomery (2019). This is the classical
+Mason (1992) and tabulated by Montgomery (2009). This is the classical
 (non-robust) counterpart of \code{\link{ucl_F_adjusted}}, included as a
 benchmark for the Monte Carlo comparisons reported in the paper.
 }
 \details{
 The exact UCLs for the Hotelling T-squared statistic on subgrouped data
-are computed as (Montgomery, 2019, Section 11.3):
+are computed as (Montgomery, 2009, Section 11.3):
 
 Phase II (prospective, equation 11.21, default):
 \deqn{UCL = \frac{J(K+1)(I-1)}{K I - K - J + 1} F_{J, K I - K - J + 1, 1-\alpha}}
@@ -80,8 +80,8 @@ Tracy, N. D., Young, J. C., & Mason, R. L. (1992). Multivariate control
 charts for individual observations. \emph{Journal of Quality Technology},
 24(2), 88-95.
 
-Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality Control}
-(8th ed.). Wiley. Section 11.3, equations 11.20 and 11.21.
+Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality Control},
+6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Section 11.3, equations 11.20 and 11.21.
 
 Lowry, C. A., & Montgomery, D. C. (1995). A review of multivariate control
 charts. \emph{IIE Transactions}, 27(6), 800-810.

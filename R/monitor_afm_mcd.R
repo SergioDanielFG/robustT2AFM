@@ -34,8 +34,8 @@
 #' in Phase 1.
 #'
 #' @references
-#' Montgomery, D. C. (2019). Introduction to Statistical Quality Control
-#' (8th ed.). Wiley. Chapter 11: Multivariate Process Monitoring and Control.
+#' Montgomery, D. C. (2009). Introduction to Statistical Quality Control,
+#' 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Chapter 11: Multivariate Process Monitoring and Control.
 #'
 #' @export
 #'

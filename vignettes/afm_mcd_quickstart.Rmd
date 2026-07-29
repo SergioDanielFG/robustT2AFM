@@ -23,7 +23,7 @@ This vignette is deliberately short. It shows the four-line pipeline
 a quality engineer runs to deploy the AFM-MCD Phase 2 control chart,
 why the robust version matters when historical batches are not perfectly
 clean, and what to do when the estimator complains. The method behind
-the code is Ruiz-Barzola et al. (2026); see the package references
+the code is Frutos-Galarza et al. (2026); see the package references
 for the full derivation.
 
 ## 1. Why not just use classical Hotelling?
@@ -190,7 +190,7 @@ target).
 
 ## Reference
 
-Ruiz-Barzola, O., Frutos Galarza, S. D., Ramirez, J., Galindo Villardon, P.
-(2026). *AFM-Weighted Robust T-Squared Control Chart with Bootstrap
-UCL for Batch Processes under Phase I Contamination.* Manuscript in
-preparation.
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramírez, J., Galindo-Villardón, P.
+(2026). *A Robust Hotelling-Type T2 Control Chart Combining the Minimum
+Covariance Determinant Estimator with Multiple Factor Analysis Weighting.*
+Manuscript in preparation.

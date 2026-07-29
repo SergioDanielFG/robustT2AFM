@@ -11,6 +11,7 @@ revdep/
 *.log
 *~
 .positai
+.claude/
 
 # Paper-artifact guards (folder-specific, not global *.csv)
 /resultados_*/

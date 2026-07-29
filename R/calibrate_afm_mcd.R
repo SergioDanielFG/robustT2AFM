@@ -4,7 +4,7 @@
 #' Hotelling T-squared control chart. For each batch, MCD estimators of location
 #' and scatter are computed. Batch covariance matrices are then combined into a
 #' global reference matrix using AFM inverse weighting based on first eigenvalues
-#' (Escofier & Pages, 1994), which gives less influence to batches with higher
+#' (Abdi, Williams & Valentin, 2013), which gives less influence to batches with higher
 #' dispersion. The global reference center is the average of the MCD batch centers.
 #'
 #' @param data A data frame containing Phase 1 process data. Must contain a column
@@ -12,7 +12,7 @@
 #' @param variables Character vector with the names of the process variables.
 #' @param mcd_alpha Numeric in (0.60, 0.90). Proportion of observations retained
 #'   by MCD. Default 0.67 (breakdown point = 0.33), the value used in
-#'   Ruiz-Barzola et al. (2026).
+#'   Frutos-Galarza et al. (2026).
 #'
 #' @return A list containing:
 #' \describe{
@@ -30,6 +30,10 @@
 #' }
 #'
 #' @details
+#' The acronym AFM comes from the original French name of the technique,
+#' \emph{Analyse Factorielle Multiple}; the English literature calls it MFA.
+#' This package keeps AFM throughout, for consistency with its own name.
+#'
 #' The AFM inverse weighting is computed as:
 #' \deqn{w_k = (1/\lambda_{1,k}) / \sum_i (1/\lambda_{1,i})}
 #' where \eqn{\lambda_{1,k}} is the first eigenvalue of the MCD covariance
@@ -41,8 +45,10 @@
 #' where \eqn{S_k} is the MCD covariance of batch k.
 #'
 #' @references
-#' Escofier, B., & Pages, J. (1994). Multiple factor analysis (AFMULT package).
-#' Computational Statistics & Data Analysis, 18(1), 121-140.
+#' Abdi, H., Williams, L. J., & Valentin, D. (2013). Multiple factor analysis:
+#' principal component analysis for multitable and multiblock data sets.
+#' \emph{Wiley Interdisciplinary Reviews: Computational Statistics}, 5(2),
+#' 149-179. \doi{10.1002/wics.1246}
 #'
 #' Rousseeuw, P. J., & Van Driessen, K. (1999). A fast algorithm for the
 #' minimum covariance determinant estimator. Technometrics, 41(3), 212-223.

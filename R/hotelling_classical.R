@@ -6,7 +6,7 @@
 #' by \code{\link{hotelling_classical_monitor}}. Unlike
 #' \code{\link{calibrate_afm_mcd}}, no robust estimation is applied: the
 #' function uses the standard sample mean and pooled within-batch sample
-#' covariance, which is the classical estimator described in Montgomery (2019,
+#' covariance, which is the classical estimator described in Montgomery (2009,
 #' Chapter 11). This function is included in the package as a benchmark for
 #' the Monte Carlo comparisons reported in the paper.
 #'
@@ -34,7 +34,7 @@
 #' control during Phase 1. It is the classical (non-robust) counterpart of the
 #' AFM-weighted MCD estimator implemented in \code{\link{calibrate_afm_mcd}}.
 #'
-#' Notation follows Montgomery (2019), translated to the package convention:
+#' Notation follows Montgomery (2009), translated to the package convention:
 #' J = number of variables (p in Montgomery), K = number of preliminary batches
 #' (m in Montgomery), I = batch size (n in Montgomery).
 #'
@@ -47,8 +47,8 @@
 #' charts for individual observations. \emph{Journal of Quality Technology},
 #' 24(2), 88-95.
 #'
-#' Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality Control}
-#' (8th ed.). Wiley. Section 11.3.
+#' Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality Control},
+#' 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Section 11.3.
 #'
 #' @importFrom stats cov
 #' @export
@@ -200,8 +200,8 @@ hotelling_classical_calibrate <- function(data, variables) {
 #' testing of sample bombsights. In \emph{Techniques of Statistical Analysis}
 #' (pp. 111-184). McGraw-Hill.
 #'
-#' Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality Control}
-#' (8th ed.). Wiley. Section 11.3, equation 11.19.
+#' Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality Control},
+#' 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Section 11.3, equation 11.19.
 #'
 #' @export
 #'
@@ -299,7 +299,7 @@ hotelling_classical_monitor <- function(new_data, calibration, variables) {
 #' Computes the exact F-distribution-based Upper Control Limit for the
 #' Hotelling T-squared chart with subgrouped data, in either the Phase 1
 #' (retrospective) or Phase 2 (prospective) form derived by Tracy, Young, and
-#' Mason (1992) and tabulated by Montgomery (2019). This is the classical
+#' Mason (1992) and tabulated by Montgomery (2009). This is the classical
 #' (non-robust) counterpart of \code{\link{ucl_F_adjusted}}, included as a
 #' benchmark for the Monte Carlo comparisons reported in the paper.
 #'
@@ -310,7 +310,7 @@ hotelling_classical_monitor <- function(new_data, calibration, variables) {
 #' @param alpha Numeric in (0, 1). Family-wise false-alarm probability. Default
 #'   0.001 (European convention, in-control ARL0 = 1000), used throughout the
 #'   package for consistency with \code{\link{ucl_F_adjusted}} and matching
-#'   Ruiz-Barzola et al. (2026). Change to 0.0027 to obtain 3-sigma limits.
+#'   Frutos-Galarza et al. (2026). Change to 0.0027 to obtain 3-sigma limits.
 #' @param phase Character. Either "I" (retrospective limits, Montgomery
 #'   eq. 11.20) or "II" (prospective limits, Montgomery eq. 11.21). Default "II".
 #'
@@ -325,7 +325,7 @@ hotelling_classical_monitor <- function(new_data, calibration, variables) {
 #'
 #' @details
 #' The exact UCLs for the Hotelling T-squared statistic on subgrouped data
-#' are computed as (Montgomery, 2019, Section 11.3):
+#' are computed as (Montgomery, 2009, Section 11.3):
 #'
 #' Phase II (prospective, equation 11.21, default):
 #' \deqn{UCL = \frac{J(K+1)(I-1)}{K I - K - J + 1} F_{J, K I - K - J + 1, 1-\alpha}}
@@ -353,8 +353,8 @@ hotelling_classical_monitor <- function(new_data, calibration, variables) {
 #' charts for individual observations. \emph{Journal of Quality Technology},
 #' 24(2), 88-95.
 #'
-#' Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality Control}
-#' (8th ed.). Wiley. Section 11.3, equations 11.20 and 11.21.
+#' Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality Control},
+#' 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Section 11.3, equations 11.20 and 11.21.
 #'
 #' Lowry, C. A., & Montgomery, D. C. (1995). A review of multivariate control
 #' charts. \emph{IIE Transactions}, 27(6), 800-810.
@@ -403,9 +403,9 @@ hotelling_classical_ucl <- function(K, I, J, alpha = 0.001, phase = "II") {
 
   # --- Compute Hotelling UCL ---
   scale_factor <- if (phase == "II") {
-    (J * (K + 1) * (I - 1)) / df2          # Montgomery (2019), eq. 11.21
+    (J * (K + 1) * (I - 1)) / df2          # Montgomery (2009), eq. 11.21
   } else {
-    (J * (K - 1) * (I - 1)) / df2          # Montgomery (2019), eq. 11.20
+    (J * (K - 1) * (I - 1)) / df2          # Montgomery (2009), eq. 11.20
   }
 
   F_quantile <- stats::qf(1 - alpha, df1 = df1, df2 = df2)

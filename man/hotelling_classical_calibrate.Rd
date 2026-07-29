@@ -34,7 +34,7 @@ are used as plug-in parameters for the Phase 2 monitoring statistic computed
 by \code{\link{hotelling_classical_monitor}}. Unlike
 \code{\link{calibrate_afm_mcd}}, no robust estimation is applied: the
 function uses the standard sample mean and pooled within-batch sample
-covariance, which is the classical estimator described in Montgomery (2019,
+covariance, which is the classical estimator described in Montgomery (2009,
 Chapter 11). This function is included in the package as a benchmark for
 the Monte Carlo comparisons reported in the paper.
 }
@@ -44,7 +44,7 @@ covariance Sigma under the assumption that the process is in statistical
 control during Phase 1. It is the classical (non-robust) counterpart of the
 AFM-weighted MCD estimator implemented in \code{\link{calibrate_afm_mcd}}.
 
-Notation follows Montgomery (2019), translated to the package convention:
+Notation follows Montgomery (2009), translated to the package convention:
 J = number of variables (p in Montgomery), K = number of preliminary batches
 (m in Montgomery), I = batch size (n in Montgomery).
 }
@@ -73,6 +73,6 @@ Tracy, N. D., Young, J. C., & Mason, R. L. (1992). Multivariate control
 charts for individual observations. \emph{Journal of Quality Technology},
 24(2), 88-95.
 
-Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality Control}
-(8th ed.). Wiley. Section 11.3.
+Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality Control},
+6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Section 11.3.
 }

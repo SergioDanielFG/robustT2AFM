@@ -2,30 +2,36 @@ Package: robustT2AFM
 Title: AFM-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes
 Version: 0.1.0
 Authors@R: c(
-    person("Sergio Daniel", "Frutos Galarza", , "sergio_dan88@hotmail.com",
+    person("Sergio Daniel", "Frutos-Galarza", , "idu045235@usal.es",
            role = c("aut", "cre"),
            comment = c(ORCID = "0009-0007-2961-032X")),
-    person("Omar", "Ruiz Barzola", , "oruiz@espol.edu.ec",
-           role = "aut",
+    person("Omar", "Ruiz-Barzola", , "oruiz@espol.edu.ec",
+           role = "ths",
            comment = c(ORCID = "0000-0001-8206-1744")),
-    person("Jhon", "Ramirez", , "jramirez@espol.edu.ec",
-           role = "aut"),
-    person("Purificacion", "Galindo Villardon", , "pgalindo@usal.es",
-           role = "aut",
+    person("Jhon", "Ramírez", , "jramirez@espol.edu.ec",
+           role = "ths"),
+    person("Purificación", "Galindo-Villardón", , "pgalindo@usal.es",
+           role = "ths",
            comment = c(ORCID = "0000-0001-6977-7545"))
   )
-Description: Implements a robust multivariate statistical process control
-    methodology for batch manufacturing that combines Minimum Covariance
-    Determinant (MCD) estimation per batch with Multiple Factor Analysis
-    (AFM) weighting. The methodology detects masking effects produced by
-    outlier contamination in Phase I calibration data and preserves
-    sensitivity to mean shifts in Phase II monitoring. The package
-    provides bootstrap-calibrated upper control limits, baseline
-    comparison with classical Hotelling T-squared and Vargas (2003)
-    robust T-squared, and visual diagnostic panels based on
-    Mason-Tracy-Young (1995) decomposition and confidence ellipses.
-    Methodology based on Ruiz-Barzola et al. (2026) and
-    Rousseeuw and Van Driessen (1999) <doi:10.1080/00401706.1999.10485670>.
+Description: Implements a robust Hotelling T-squared control chart for batch
+    processes that combines Minimum Covariance Determinant (MCD) estimation
+    per batch with Multiple Factor Analysis weighting of the batch
+    covariances. The weighting reduces the influence of contaminated batches
+    on the Phase I reference covariance, which keeps the chart sensitive to
+    mean shifts in Phase II when the historical batches are not clean. The
+    upper control limit is parametric, adjusted for the effective batch size
+    left by MCD trimming; a bootstrap alternative was evaluated in the
+    reference paper and discarded, so it is not implemented here. The method
+    detects shifts in the process mean only: changes in the covariance
+    structure are out of scope. Also provided are a classical Hotelling
+    T-squared implementation as a baseline for comparison, a control chart
+    that labels the out-of-control batches for reporting, and a generator of
+    contaminated batch data for simulation studies. The method and its
+    calibration are described in Frutos-Galarza et al. (2026); the weighting
+    scheme follows Abdi, Williams and Valentin (2013)
+    <doi:10.1002/wics.1246> and the robust estimator follows Rousseeuw and
+    Van Driessen (1999) <doi:10.1080/00401706.1999.10485670>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

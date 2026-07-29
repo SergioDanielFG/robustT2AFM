@@ -1,0 +1,45 @@
+citHeader(
+  "To cite robustT2AFM in publications, please cite both the software and the",
+  "article that describes the method."
+)
+
+## ---------------------------------------------------------------------
+## The software
+## ---------------------------------------------------------------------
+bibentry(
+  bibtype = "Manual",
+  title   = "{robustT2AFM}: AFM-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes",
+  author  = c(
+    person("Sergio Daniel", "Frutos-Galarza"),
+    person("Omar",          "Ruiz-Barzola"),
+    person("Jhon",          "Ramírez"),
+    person("Purificación",  "Galindo-Villardón")
+  ),
+  year    = "2026",
+  note    = paste("R package version", meta$Version),
+  url     = "https://github.com/SergioDanielFG/robustT2AFM"
+)
+
+## ---------------------------------------------------------------------
+## The method
+## ---------------------------------------------------------------------
+## PENDIENTE: volume, number, pages and doi are placeholders. Replace them
+## with the real values once Quality and Reliability Engineering
+## International publishes the article, and delete the `note` field.
+bibentry(
+  bibtype = "Article",
+  title   = "A Robust Hotelling-Type T2 Control Chart Combining the Minimum Covariance Determinant Estimator with Multiple Factor Analysis Weighting",
+  author  = c(
+    person("Sergio Daniel", "Frutos-Galarza"),
+    person("Omar",          "Ruiz-Barzola"),
+    person("Jhon",          "Ramírez"),
+    person("Purificación",  "Galindo-Villardón")
+  ),
+  journal = "Quality and Reliability Engineering International",
+  year    = "2026",
+  volume  = "PENDIENTE",
+  number  = "PENDIENTE",
+  pages   = "PENDIENTE",
+  doi     = "PENDIENTE",
+  note    = "Under review. Volume, issue, pages and DOI pending publication."
+)

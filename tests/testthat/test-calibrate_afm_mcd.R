@@ -15,7 +15,7 @@ test_that("calibrate_afm_mcd returns a coherent AFM/MCD reference", {
   # I_phase1 records the Phase 1 batch size (first valid batch).
   expect_equal(cal$I_phase1, 20L)
 
-  # Default mcd_alpha matches Ruiz-Barzola et al. (2026).
+  # Default mcd_alpha matches Frutos-Galarza et al. (2026).
   expect_equal(cal$mcd_alpha, 0.67)
 
   # AFM inverse weights: strictly positive and sum to exactly 1.

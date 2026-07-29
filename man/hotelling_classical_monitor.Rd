@@ -69,6 +69,6 @@ Hotelling, H. (1947). Multivariate quality control, illustrated by the air
 testing of sample bombsights. In \emph{Techniques of Statistical Analysis}
 (pp. 111-184). McGraw-Hill.
 
-Montgomery, D. C. (2019). \emph{Introduction to Statistical Quality Control}
-(8th ed.). Wiley. Section 11.3, equation 11.19.
+Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality Control},
+6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Section 11.3, equation 11.19.
 }
