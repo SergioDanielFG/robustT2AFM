@@ -1,0 +1,196 @@
+---
+title: "AFM-MCD Robust T-squared Control Chart: A Quick Start for Quality Engineers"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{AFM-MCD Robust T-squared Control Chart: A Quick Start for Quality Engineers}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  dpi       = 96,
+  warning   = FALSE,
+  message   = FALSE
+)
+```
+
+This vignette is deliberately short. It shows the four-line pipeline
+a quality engineer runs to deploy the AFM-MCD Phase 2 control chart,
+why the robust version matters when historical batches are not perfectly
+clean, and what to do when the estimator complains. The method behind
+the code is Ruiz-Barzola et al. (2026); see the package references
+for the full derivation.
+
+## 1. Why not just use classical Hotelling?
+
+Classical Hotelling T-squared assumes the Phase 1 calibration batches are
+in control. In practice, one or two historical batches almost always
+carry within-batch outliers or a shifted mean. Those pollute the pooled
+covariance matrix S_p, which then inflates the UCL. The chart looks
+"quiet" but the increased UCL is masking real Phase 2 alarms.
+
+The AFM-MCD chart absorbs this contamination at calibration time:
+
+- **MCD per batch** trims the ~33% most extreme observations in each
+  batch (`h = 0.67`), so within-batch outliers do not enter the batch
+  covariance S_k.
+- **AFM inverse weights** `w_k = (1/lambda1_k) / Σ (1/lambda1_i)`
+  down-weight batches with unusually large dispersion, so entirely
+  shifted batches contribute less to the reference covariance S_w.
+
+Phase 2 then uses simple batch means against the frozen reference
+`(mu_r, S_w)`, without any per-batch trimming. The alarm sensitivity
+of the classical chart is preserved, but the masking is gone.
+
+## 2. Same data, two charts
+
+To make the point concrete, we simulate a Phase 1 that already contains
+2 batches with within-batch outliers and ~7 % of batches fully shifted,
+plus a Phase 2 where 30 % of batches are out of control. We then run
+the classical chart and the AFM-MCD chart on the **same** data.
+
+```{r sim}
+library(robustT2AFM)
+
+sim <- simulate_batch_process(
+  K1 = 30, K2 = 20, I = 20, J = 4,
+  outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
+  prop_contam_F1 = 0.07, shift_contam = 3,
+  prop_ooc_F2 = 0.30,   shift_ooc = 2,
+  seed = 20260417
+)
+vars   <- paste0("Var", 1:4)
+phase1 <- subset(sim, Phase == "Phase 1")
+phase2 <- subset(sim, Phase == "Phase 2")
+```
+
+Classical Hotelling (baseline):
+
+```{r classical}
+cal_c <- hotelling_classical_calibrate(phase1, vars)
+mon_c <- hotelling_classical_monitor(phase2, cal_c, vars)
+ucl_c <- hotelling_classical_ucl(K = 30, I = 20, J = 4)
+plot_control_chart(
+  mon_c, UCL = ucl_c$UCL, alpha = ucl_c$parameters$alpha,
+  method_label = "Classical Hotelling T-squared - Phase 2"
+)
+```
+
+AFM-MCD (this package):
+
+```{r afm-mcd}
+cal_r <- calibrate_afm_mcd(phase1, vars)
+ucl_r <- ucl_F_adjusted(cal_r, I = 20)
+mon_r <- monitor_afm_mcd(phase2, cal_r, vars)
+plot_control_chart(
+  mon_r, UCL = ucl_r$UCL, alpha = ucl_r$parameters$alpha,
+  method_label = "AFM-MCD Robust T-squared - Phase 2"
+)
+```
+
+The two Phase 2 datasets are identical. The AFM-MCD chart flags the
+out-of-control batches; the classical chart, with its UCL inflated by
+the contaminated Phase 1, misses several of them.
+
+## 3. The pipeline on your own data
+
+Your Phase 1 and Phase 2 data need to sit in a single `data.frame` with:
+
+- a `Batch` column identifying each batch (character or factor),
+- one numeric column per process variable (`Var1`, `Var2`, ...).
+
+In production you load them with `read.csv()` or your MES connector.
+In this vignette we keep the simulator so the code is reproducible:
+
+```r
+# In practice, replace this line with your data load:
+#   raw <- read.csv("historical_batches.csv")
+# and split into phase1 / phase2 as you already do.
+raw <- simulate_batch_process(seed = 20260417)
+```
+
+Then the entire chart is four operational calls:
+
+```r
+vars <- paste0("Var", 1:4)
+cal  <- calibrate_afm_mcd(subset(raw, Phase == "Phase 1"), vars)
+ucl  <- ucl_F_adjusted(cal, I = 20)
+mon  <- monitor_afm_mcd(subset(raw, Phase == "Phase 2"), cal, vars)
+plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
+                   method_label = "AFM-MCD Control Chart - Phase 2")
+```
+
+## 4. Reading the chart and putting it in a report
+
+- **Top-left summary** ("N OOC / total (X%)"): how many Phase 2 batches
+  crossed the UCL and what fraction of the run that is.
+- **UCL label** ("UCL = 19.7  (alpha = 0.001)"): the limit itself and
+  the nominal false-alarm rate, so anyone reading the report knows the
+  chart's ARL0.
+- **Red batch labels** (e.g. `F2_B07`): the batches to investigate.
+  Pull their raw records, check the process log around that time
+  (materials, operator, equipment), and if the shift persists across
+  successive batches, escalate.
+- **Table of alarms:**
+
+```r
+mon$is_ooc <- mon$T2 > ucl$UCL
+mon[mon$is_ooc, ]
+```
+
+To include the chart in a report, add `save_path` and you get both a
+300 dpi PNG and a vector PDF at 7 x 4.5 in:
+
+```r
+plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
+                   method_label = "AFM-MCD Control Chart - Phase 2",
+                   save_path = "phase2_chart")
+# writes phase2_chart.png and phase2_chart.pdf
+```
+
+## 5. Troubleshooting
+
+**Too few observations per batch for MCD.** MCD needs enough rows per
+batch to fit a trimmed covariance. Practical minimum: `I >= J + 2`
+(e.g. `J = 4` implies `I >= 6`); the package aborts calibration if
+fewer than two batches survive. Effective batch size is `m* = round(I*h)`
+with `h = 0.67`, so the F-adjusted UCL loses degrees of freedom when I
+is small. Rule of thumb: aim for `m* >= 2 * J`. If your history is
+thin (say `K1 < 5` or `I < 8`), the UCL becomes conservative and
+unstable; collect more calibration data before going live.
+
+**Variables on very different scales.** MCD itself is
+affine-equivariant, so per-batch estimation is unaffected by scale
+differences. But the AFM weights rank batches by their largest
+eigenvalue, so a variable with much larger natural variance will
+dominate `lambda1` and drive the weights. Standardize using **Phase 1
+statistics only**, then apply the same shift and scale to Phase 2:
+
+```r
+mu_p1 <- colMeans(phase1[vars])
+sd_p1 <- apply(phase1[vars], 2, sd)
+phase1[vars] <- scale(phase1[vars], center = mu_p1, scale = sd_p1)
+phase2[vars] <- scale(phase2[vars], center = mu_p1, scale = sd_p1)
+```
+
+Never restandardize a new batch with its own mean and SD - that erases
+the mean shift you are trying to detect.
+
+**S_w looks singular in Phase 2.** When two variables are almost
+collinear (correlation above ~0.99), `S_w` can be numerically singular
+and `monitor_afm_mcd()` fails when it tries to invert it. Two fixes:
+drop the redundant variable, or increase I so that
+`m* = round(I * 0.67) > J` with margin (again, `m* >= 2 * J` is a good
+target).
+
+## Reference
+
+Ruiz-Barzola, O., Frutos Galarza, S. D., Ramirez, J., Galindo Villardon, P.
+(2026). *AFM-Weighted Robust T-Squared Control Chart with Bootstrap
+UCL for Batch Processes under Phase I Contamination.* Manuscript in
+preparation.

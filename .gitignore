@@ -10,3 +10,11 @@ revdep/
 .idea/
 *.log
 *~
+.positai
+
+# Paper-artifact guards (folder-specific, not global *.csv)
+/resultados_*/
+/figures/
+/_smoke_output/
+/dataset_*.rds
+/*-MacBook*.Rproj

@@ -11,3 +11,15 @@
 ^\.covrignore$
 ^CLAUDE\.md$
 ^LICENSE\.md$
+^\.positai$
+^\.claude$
+^\.Rhistory$
+^_smoke_output$
+^figures$
+^resultados_.*
+^.*_paper_artifacts.*
+^ARL1_.*\.csv$
+^tabla_.*\.csv$
+^comparacion_.*\.csv$
+^dataset_.*\.rds$
+^.*-MacBook Pro.*
