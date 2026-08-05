@@ -120,7 +120,8 @@ Then the entire chart is four operational calls:
 vars <- paste0("Var", 1:4)
 cal  <- calibrate_afm_mcd(subset(raw, Phase == "Phase 1"), vars)
 ucl  <- ucl_F_adjusted(cal, I = 20)
-mon  <- monitor_afm_mcd(subset(raw, Phase == "Phase 2"), cal, vars)
+mon  <- monitor_afm_mcd(subset(raw, Phase == "Phase 2"), cal, vars,
+                        ucl = ucl$UCL)
 plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
                    method_label = "AFM-MCD Control Chart - Phase 2")
 ```
@@ -136,10 +137,12 @@ plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
   Pull their raw records, check the process log around that time
   (materials, operator, equipment), and if the shift persists across
   successive batches, escalate.
-- **Table of alarms:**
+- **Table of alarms:** passing `ucl` to `monitor_afm_mcd()` above added an
+  `is_ooc` column, flagging every batch strictly above the limit (a batch
+  landing exactly on it counts as under control, the same criterion the
+  chart uses):
 
 ```r
-mon$is_ooc <- mon$T2 > ucl$UCL
 mon[mon$is_ooc, ]
 ```
 

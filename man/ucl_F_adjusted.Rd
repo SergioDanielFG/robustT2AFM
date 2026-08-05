@@ -58,9 +58,11 @@ cat(sprintf("UCL = \%.2f  (m* = \%d, df2 = \%d, alpha = \%.3f)\n",
             ucl$UCL, ucl$parameters$m_star,
             ucl$parameters$df2, ucl$parameters$alpha))
 
-# Apply against Phase 2.
-mon <- monitor_afm_mcd(subset(sim, Phase == "Phase 2"), cal, vars)
-sum(mon$T2 > ucl$UCL)                    # number of alarms
+# Apply against Phase 2: pass the limit to monitor_afm_mcd() and it
+# flags the out-of-control batches for you.
+mon <- monitor_afm_mcd(subset(sim, Phase == "Phase 2"), cal, vars,
+                       ucl = ucl$UCL)
+sum(mon$is_ooc)                          # number of alarms
 }
 \references{
 Montgomery, D. C. (2009). Introduction to Statistical Quality Control,

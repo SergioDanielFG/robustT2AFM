@@ -13,12 +13,21 @@
 #'   containing mu_r and Sw from Phase 1 calibration.
 #' @param variables Character vector with the names of the process variables.
 #'   Must match the variables used in the calibration.
+#' @param ucl Optional single positive number: the Upper Control Limit to
+#'   compare each T-squared against, normally \code{ucl_F_adjusted(cal, I)$UCL}.
+#'   Pass the number itself, not the list returned by
+#'   \code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case the
+#'   output has exactly the three columns described below.
 #'
 #' @return A data frame with one row per batch and columns:
 #' \describe{
 #'   \item{Batch}{Batch identifier.}
 #'   \item{I}{Number of observations in the batch.}
 #'   \item{T2}{Hotelling T-squared statistic for the batch.}
+#'   \item{is_ooc}{Logical, present only when \code{ucl} was supplied.
+#'         \code{TRUE} marks an out-of-control batch, i.e. one whose T-squared
+#'         is strictly greater than the limit. A batch landing exactly on the
+#'         limit is not flagged.}
 #' }
 #'
 #' @details
@@ -39,6 +48,9 @@
 #' A singular \eqn{S_w} usually means two monitored variables are redundant,
 #' or that the Phase 1 batches were too small for their number of variables.
 #'
+#' Supplying \code{ucl} only adds the \code{is_ooc} column; the T-squared
+#' values are computed identically with and without it.
+#'
 #' @references
 #' Montgomery, D. C. (2009). Introduction to Statistical Quality Control,
 #' 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Chapter 11: Multivariate Process Monitoring and Control.
@@ -57,15 +69,19 @@
 #' phase1 <- subset(sim, Phase == "Phase 1")
 #' phase2 <- subset(sim, Phase == "Phase 2")
 #'
-#' # Phase 1 calibration and Phase 2 monitoring.
+#' # Phase 1 calibration, operational UCL and Phase 2 monitoring.
 #' cal <- calibrate_afm_mcd(phase1, vars)
-#' mon <- monitor_afm_mcd(phase2, cal, vars)
+#' ucl <- ucl_F_adjusted(cal, I = 20)$UCL
+#' mon <- monitor_afm_mcd(phase2, cal, vars, ucl = ucl)
 #'
-#' # Flag out-of-control batches against the operational F-adjusted UCL.
-#' ucl        <- ucl_F_adjusted(cal, I = 20)$UCL
-#' mon$is_ooc <- mon$T2 > ucl
 #' mon[mon$is_ooc, ]                        # batches to investigate
-monitor_afm_mcd <- function(new_data, calibration, variables) {
+#' sum(mon$is_ooc)                          # how many alarms fired
+#'
+#' # Without 'ucl' you get the T-squared values only, and compare them
+#' # yourself against whatever limit you prefer.
+#' mon_plain <- monitor_afm_mcd(phase2, cal, vars)
+#' names(mon_plain)
+monitor_afm_mcd <- function(new_data, calibration, variables, ucl = NULL) {
 
   # --- Input validation ---
   if (!is.data.frame(new_data)) {
@@ -86,11 +102,24 @@ monitor_afm_mcd <- function(new_data, calibration, variables) {
     stop("Number of variables (", length(variables), ") does not match ",
          "calibration mu_r dimension (", length(calibration$mu_r), ").")
   }
+  if (!is.null(ucl)) {
+    # El error tipico es pasar el objeto de ucl_F_adjusted() en vez de su $UCL.
+    if (is.list(ucl) && !is.null(ucl$UCL)) {
+      stop("'ucl' must be a single positive number, not the list returned by ",
+           "ucl_F_adjusted(). Pass ucl_F_adjusted(calibration, I)$UCL instead.")
+    }
+    if (!is.numeric(ucl) || length(ucl) != 1 || !is.finite(ucl) || ucl <= 0) {
+      stop("'ucl' must be a single positive, finite number (the control ",
+           "limit to compare each T-squared against), or NULL to omit the ",
+           "out-of-control flag. Typical use: ",
+           "ucl_F_adjusted(calibration, I)$UCL.")
+    }
+  }
 
   # --- Setup ---
   mu_r <- calibration$mu_r
   # Misma proteccion que hotelling_classical_monitor(): sin ella un Sw singular
-  # aborta con el mensaje cripitico de solve().
+  # aborta con el mensaje criptico de solve().
   Sw_inv <- tryCatch(
     solve(calibration$Sw),
     error = function(e) {
@@ -130,6 +159,12 @@ monitor_afm_mcd <- function(new_data, calibration, variables) {
       T2 = T2,
       stringsAsFactors = FALSE
     ))
+  }
+
+  # --- Optional out-of-control flag ---
+  # Estrictamente mayor: un lote justo sobre el limite no se marca.
+  if (!is.null(ucl)) {
+    results$is_ooc <- results$T2 > ucl
   }
 
   return(results)

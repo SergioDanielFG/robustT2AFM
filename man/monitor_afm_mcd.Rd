@@ -4,7 +4,7 @@
 \alias{monitor_afm_mcd}
 \title{Monitor New Batches Using AFM-MCD Calibration (Phase 2)}
 \usage{
-monitor_afm_mcd(new_data, calibration, variables)
+monitor_afm_mcd(new_data, calibration, variables, ucl = NULL)
 }
 \arguments{
 \item{new_data}{A data frame containing the new batches to evaluate. Must
@@ -15,6 +15,12 @@ containing mu_r and Sw from Phase 1 calibration.}
 
 \item{variables}{Character vector with the names of the process variables.
 Must match the variables used in the calibration.}
+
+\item{ucl}{Optional single positive number: the Upper Control Limit to
+compare each T-squared against, normally \code{ucl_F_adjusted(cal, I)$UCL}.
+Pass the number itself, not the list returned by
+\code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case the
+output has exactly the three columns described below.}
 }
 \value{
 A data frame with one row per batch and columns:
@@ -22,6 +28,10 @@ A data frame with one row per batch and columns:
 \item{Batch}{Batch identifier.}
 \item{I}{Number of observations in the batch.}
 \item{T2}{Hotelling T-squared statistic for the batch.}
+\item{is_ooc}{Logical, present only when \code{ucl} was supplied.
+\code{TRUE} marks an out-of-control batch, i.e. one whose T-squared
+is strictly greater than the limit. A batch landing exactly on the
+limit is not flagged.}
 }
 }
 \description{
@@ -49,6 +59,9 @@ singular the function aborts with an explanatory error instead of the raw
 \code{solve()} message, mirroring \code{\link{hotelling_classical_monitor}}.
 A singular \eqn{S_w} usually means two monitored variables are redundant,
 or that the Phase 1 batches were too small for their number of variables.
+
+Supplying \code{ucl} only adds the \code{is_ooc} column; the T-squared
+values are computed identically with and without it.
 }
 \examples{
 # Simulate a mixed Phase 1 (contamination) + Phase 2 (30\% OOC) scenario.
@@ -62,14 +75,18 @@ vars   <- paste0("Var", 1:4)
 phase1 <- subset(sim, Phase == "Phase 1")
 phase2 <- subset(sim, Phase == "Phase 2")
 
-# Phase 1 calibration and Phase 2 monitoring.
+# Phase 1 calibration, operational UCL and Phase 2 monitoring.
 cal <- calibrate_afm_mcd(phase1, vars)
-mon <- monitor_afm_mcd(phase2, cal, vars)
+ucl <- ucl_F_adjusted(cal, I = 20)$UCL
+mon <- monitor_afm_mcd(phase2, cal, vars, ucl = ucl)
 
-# Flag out-of-control batches against the operational F-adjusted UCL.
-ucl        <- ucl_F_adjusted(cal, I = 20)$UCL
-mon$is_ooc <- mon$T2 > ucl
 mon[mon$is_ooc, ]                        # batches to investigate
+sum(mon$is_ooc)                          # how many alarms fired
+
+# Without 'ucl' you get the T-squared values only, and compare them
+# yourself against whatever limit you prefer.
+mon_plain <- monitor_afm_mcd(phase2, cal, vars)
+names(mon_plain)
 }
 \references{
 Montgomery, D. C. (2009). Introduction to Statistical Quality Control,
