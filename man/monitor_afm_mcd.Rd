@@ -43,6 +43,12 @@ observations in the new batch.
 In Phase 2, MCD is NOT applied to new batches. The new batch enters the
 monitoring as-is, and is compared against the robust structure established
 in Phase 1.
+
+Computing the statistic requires inverting \eqn{S_w}. If that matrix is
+singular the function aborts with an explanatory error instead of the raw
+\code{solve()} message, mirroring \code{\link{hotelling_classical_monitor}}.
+A singular \eqn{S_w} usually means two monitored variables are redundant,
+or that the Phase 1 batches were too small for their number of variables.
 }
 \examples{
 # Simulate a mixed Phase 1 (contamination) + Phase 2 (30\% OOC) scenario.

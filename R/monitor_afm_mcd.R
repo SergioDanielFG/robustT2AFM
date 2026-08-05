@@ -33,6 +33,12 @@
 #' monitoring as-is, and is compared against the robust structure established
 #' in Phase 1.
 #'
+#' Computing the statistic requires inverting \eqn{S_w}. If that matrix is
+#' singular the function aborts with an explanatory error instead of the raw
+#' \code{solve()} message, mirroring \code{\link{hotelling_classical_monitor}}.
+#' A singular \eqn{S_w} usually means two monitored variables are redundant,
+#' or that the Phase 1 batches were too small for their number of variables.
+#'
 #' @references
 #' Montgomery, D. C. (2009). Introduction to Statistical Quality Control,
 #' 6th edition. John Wiley & Sons, Hoboken, NJ. ISBN 978-0-470-16992-6. Chapter 11: Multivariate Process Monitoring and Control.
@@ -83,7 +89,20 @@ monitor_afm_mcd <- function(new_data, calibration, variables) {
 
   # --- Setup ---
   mu_r <- calibration$mu_r
-  Sw_inv <- solve(calibration$Sw)
+  # Misma proteccion que hotelling_classical_monitor(): sin ella un Sw singular
+  # aborta con el mensaje cripitico de solve().
+  Sw_inv <- tryCatch(
+    solve(calibration$Sw),
+    error = function(e) {
+      stop("The AFM-weighted covariance matrix Sw is singular and cannot be ",
+           "inverted: ", conditionMessage(e),
+           "\nThis usually means two or more monitored variables are ",
+           "redundant (one is a copy, a sum or a fixed multiple of another), ",
+           "or that the Phase 1 batches are too small. Drop the redundant ",
+           "variable from 'variables' and calibrate again, or use larger ",
+           "Phase 1 batches.")
+    }
+  )
   batches <- unique(new_data$Batch)
 
   # --- Compute T-squared per batch ---

@@ -42,4 +42,24 @@ test_that("calibrate_afm_mcd validates its inputs", {
   expect_error(calibrate_afm_mcd(df, "Missing"), "not found in data")
   expect_error(calibrate_afm_mcd(df, c("Var1", "Var2"), mcd_alpha = 0.5),
                "mcd_alpha must be")
+  expect_error(calibrate_afm_mcd(df, c("Var1", "Var2"), verbose = "yes"),
+               "'verbose' must be a single logical")
+})
+
+test_that("calibrate_afm_mcd is silent by default and talks under verbose", {
+  sim  <- simulate_batch_process(K1 = 5, K2 = 0, I = 20, J = 4,
+                                 seed = 20260417)
+  vars <- paste0("Var", 1:4)
+
+  # Default: no message at all (scripts no longer need suppressMessages()).
+  expect_silent(calibrate_afm_mcd(sim, vars))
+
+  # verbose = TRUE restores the historical listing of valid batches.
+  expect_message(calibrate_afm_mcd(sim, vars, verbose = TRUE),
+                 "Valid batches used for calibration \\(5\\)")
+
+  # verbose does not touch the numbers.
+  cal_quiet <- calibrate_afm_mcd(sim, vars)
+  cal_loud  <- suppressMessages(calibrate_afm_mcd(sim, vars, verbose = TRUE))
+  expect_identical(cal_quiet, cal_loud)
 })

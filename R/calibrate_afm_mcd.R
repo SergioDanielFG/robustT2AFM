@@ -13,6 +13,11 @@
 #' @param mcd_alpha Numeric in (0.60, 0.90). Proportion of observations retained
 #'   by MCD. Default 0.67 (breakdown point = 0.33), the value used in
 #'   Frutos-Galarza et al. (2026).
+#' @param verbose Logical. If \code{TRUE}, a message listing the batches that
+#'   were actually used for calibration is emitted. Default \code{FALSE}
+#'   (silent). Set it to \code{TRUE} when you want to check which batches
+#'   survived the minimum-size filter; the same information is always available
+#'   afterwards in \code{names(result$weights)}.
 #'
 #' @return A list containing:
 #' \describe{
@@ -80,7 +85,11 @@
 #' round(cal$mu_r, 3)               # robust reference center
 #' round(cal$Sw, 3)                 # AFM-weighted covariance
 #' round(sort(cal$weights), 4)      # smallest weights = most anomalous batches
-calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67) {
+#'
+#' # 4) If you want to see which batches were actually used, ask for it:
+#' cal_v <- calibrate_afm_mcd(phase1, vars, verbose = TRUE)
+calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
+                              verbose = FALSE) {
 
   # --- Input validation ---
   if (!is.data.frame(data)) {
@@ -97,6 +106,9 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67) {
       mcd_alpha < 0.60 || mcd_alpha > 0.90) {
     stop("mcd_alpha must be a single numeric value in [0.60, 0.90]. ",
          "You provided: ", mcd_alpha)
+  }
+  if (!is.logical(verbose) || length(verbose) != 1 || is.na(verbose)) {
+    stop("'verbose' must be a single logical value (TRUE or FALSE).")
   }
 
   # --- Setup ---
@@ -126,8 +138,12 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67) {
     stop("At least 2 valid batches are required after MCD estimation. ",
          "Only ", length(valid_batches), " valid batches found.")
   }
-  message("Valid batches used for calibration (", length(valid_batches),
-          "): ", paste(valid_batches, collapse = ", "))
+  # El listado de lotes validos solo se emite bajo peticion explicita:
+  # la mayoria de los scripts de analisis lo envolvian en suppressMessages().
+  if (verbose) {
+    message("Valid batches used for calibration (", length(valid_batches),
+            "): ", paste(valid_batches, collapse = ", "))
+  }
 
   # --- First eigenvalue per batch ---
   lambda1 <- sapply(mcd_covariances, function(S) {

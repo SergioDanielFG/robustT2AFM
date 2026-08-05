@@ -4,7 +4,7 @@
 \alias{calibrate_afm_mcd}
 \title{Calibrate AFM-Weighted MCD Parameters (Phase 1)}
 \usage{
-calibrate_afm_mcd(data, variables, mcd_alpha = 0.67)
+calibrate_afm_mcd(data, variables, mcd_alpha = 0.67, verbose = FALSE)
 }
 \arguments{
 \item{data}{A data frame containing Phase 1 process data. Must contain a column
@@ -15,6 +15,12 @@ named 'Batch' identifying each batch.}
 \item{mcd_alpha}{Numeric in (0.60, 0.90). Proportion of observations retained
 by MCD. Default 0.67 (breakdown point = 0.33), the value used in
 Frutos-Galarza et al. (2026).}
+
+\item{verbose}{Logical. If \code{TRUE}, a message listing the batches that
+were actually used for calibration is emitted. Default \code{FALSE}
+(silent). Set it to \code{TRUE} when you want to check which batches
+survived the minimum-size filter; the same information is always available
+afterwards in \code{names(result$weights)}.}
 }
 \value{
 A list containing:
@@ -79,6 +85,9 @@ cal <- calibrate_afm_mcd(phase1, vars)
 round(cal$mu_r, 3)               # robust reference center
 round(cal$Sw, 3)                 # AFM-weighted covariance
 round(sort(cal$weights), 4)      # smallest weights = most anomalous batches
+
+# 4) If you want to see which batches were actually used, ask for it:
+cal_v <- calibrate_afm_mcd(phase1, vars, verbose = TRUE)
 }
 \references{
 Abdi, H., Williams, L. J., & Valentin, D. (2013). Multiple factor analysis:
