@@ -26,15 +26,16 @@ Description: Implements a robust Hotelling T-squared control chart for batch
     detects shifts in the process mean only: changes in the covariance
     structure are out of scope. Also provided are a classical Hotelling
     T-squared implementation as a baseline for comparison, a control chart
-    that labels the out-of-control batches for reporting, and a generator of
-    contaminated batch data for simulation studies. The method and its
+    that labels the out-of-control batches for reporting, a plot of the
+    Phase I batch weights against the uniform weight that shows which
+    calibration batches carry the most internal dispersion, and a generator
+    of contaminated batch data for simulation studies. The method and its
     calibration are described in Frutos-Galarza et al. (2026); the weighting
     scheme follows Abdi, Williams and Valentin (2013)
     <doi:10.1002/wics.1246> and the robust estimator follows Rousseeuw and
     Van Driessen (1999) <doi:10.1080/00401706.1999.10485670>.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends:
