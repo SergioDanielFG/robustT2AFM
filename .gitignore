@@ -19,3 +19,9 @@ revdep/
 /_smoke_output/
 /dataset_*.rds
 /*-MacBook*.Rproj
+
+# Herramientas locales, no forman parte del paquete
+CLAUDE.md
+.claude/
+.positai/
+.Rhistory
