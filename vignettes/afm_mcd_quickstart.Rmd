@@ -49,20 +49,20 @@ of the classical chart is preserved, but the masking is gone.
 
 ## 2. Same data, two charts
 
-To make the point concrete, we simulate a Phase 1 that already contains
-2 batches with within-batch outliers and ~7 % of batches fully shifted,
-plus a Phase 2 where 30 % of batches are out of control. We then run
-the classical chart and the AFM-MCD chart on the **same** data.
+To make the point concrete, we use the base configuration of
+Frutos-Galarza et al. (2026): a Phase 1 in which 6 of the 30 batches
+carry 4 outlying observations each (shifted 4 sigma), and a Phase 2 in
+which half the batches are off-target by 1 sigma. We then run the
+classical chart and the AFM-MCD chart on the **same** data.
 
 ```{r sim}
 library(robustT2AFM)
 
 sim <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4,
-  outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
-  prop_contam_F1 = 0.07, shift_contam = 3,
-  prop_ooc_F2 = 0.30,   shift_ooc = 2,
-  seed = 20260417
+  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+  seed = 20260425
 )
 vars   <- paste0("Var", 1:4)
 phase1 <- subset(sim, Phase == "Phase 1")
@@ -93,9 +93,28 @@ plot_control_chart(
 )
 ```
 
-The two Phase 2 datasets are identical. The AFM-MCD chart flags the
-out-of-control batches; the classical chart, with its UCL inflated by
-the contaminated Phase 1, misses several of them.
+The two Phase 2 datasets are identical. With this seed the AFM-MCD
+chart flags 8 of the 10 off-target batches and the classical chart
+flags 2, and neither raises a false alarm on the 10 in-control
+batches.
+
+Three cautions about those counts, so they are not over-read:
+
+- **They are one replication, not detection rates.** The paper reports
+  0.863 for the proposed method and 0.270 for the classical one,
+  averaged over 2000 replications. Re-running the block with a
+  different seed will give different counts.
+- **The paper measures them differently.** There both methods are
+  first equalised to a common in-control ARL0 using the empirical
+  quantile of each method's own null distribution over 5000
+  in-control batches; here each method uses its own operational
+  limit. The two figures describe similar but not identical
+  quantities, and neither estimates the other.
+- **This shows half the argument.** With a 1-sigma shift and
+  `alpha = 0.001`, what separates the two methods here is detection
+  power. Across twelve seeds and 200 replications neither method
+  produced a single false alarm, so nothing in this comparison speaks
+  to false-alarm behaviour.
 
 ## 3. The pipeline on your own data
 
@@ -111,7 +130,12 @@ In this vignette we keep the simulator so the code is reproducible:
 # In practice, replace this line with your data load:
 #   raw <- read.csv("historical_batches.csv")
 # and split into phase1 / phase2 as you already do.
-raw <- simulate_batch_process(seed = 20260417)
+raw <- simulate_batch_process(
+  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+  seed = 20260425
+)
 ```
 
 Then the entire chart is four operational calls:

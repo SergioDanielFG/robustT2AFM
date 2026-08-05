@@ -58,12 +58,13 @@
 #' @export
 #'
 #' @examples
-#' # Simulate a mixed Phase 1 (contamination) + Phase 2 (30% OOC) scenario.
+#' # Base configuration of Frutos-Galarza et al. (2026): 6 contaminated
+#' # Phase 1 batches, and half the Phase 2 batches off-target by 1 sigma.
 #' sim <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4,
-#'   outlier_batches_F1 = 2, prop_contam_F1 = 0.07,
-#'   prop_ooc_F2 = 0.30, shift_ooc = 2,
-#'   seed = 20260417
+#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+#'   seed = 20260425
 #' )
 #' vars   <- paste0("Var", 1:4)
 #' phase1 <- subset(sim, Phase == "Phase 1")

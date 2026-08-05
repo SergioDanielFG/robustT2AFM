@@ -70,21 +70,22 @@ used in Frutos-Galarza et al. (2026). Sorting by weight already discards
 the run order, so nothing is lost by transposing the axes.
 }
 \examples{
-# Phase 1 with 2 fully-shifted batches and within-batch outliers: the
-# kind of calibration set whose weights are worth looking at.
+# Phase 1 of the base configuration in Frutos-Galarza et al. (2026):
+# 6 of the 30 batches carry 4 outlying observations each.
 sim <- simulate_batch_process(
-  K1 = 30, K2 = 0, I = 20, J = 4,
-  outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
-  prop_contam_F1 = 0.07, shift_contam = 3,
-  seed = 20260417
+  K1 = 30, K2 = 0, I = 20, J = 4, rho = 0.6,
+  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+  seed = 20260425
 )
 cal <- calibrate_afm_mcd(subset(sim, Phase == "Phase 1"), paste0("Var", 1:4))
 
 # Every bar neutral; the dashed line is the uniform weight 1/K.
 plot_afm_weights(cal)
 
-# Point at the three most dispersed batches for a report.
-plot_afm_weights(cal, highlight_lowest = 3)
+# Point at the six most dispersed batches for a report. With this seed,
+# four of those six are batches that really do carry outliers, and two
+# are clean: the weight ranks dispersion, it does not classify batches.
+plot_afm_weights(cal, highlight_lowest = 6)
 
 # Save at publication dimensions (PNG 300 dpi + PDF):
 # plot_afm_weights(cal, save_path = file.path(tempdir(), "afm_weights"))

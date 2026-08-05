@@ -65,15 +65,15 @@
 #' # Typical quality-engineer workflow:
 #' # 1) Assemble Phase 1 historical batches into a data.frame with a
 #' #    "Batch" column and the J process variables. In practice this comes
-#' #    from read.csv() or your MES. Here we simulate a realistic Phase 1
-#' #    that already contains 2 batches with within-batch outliers and
-#' #    2 fully-shifted batches, i.e. contamination the calibration must
-#' #    absorb without polluting the reference.
+#' #    from read.csv() or your MES. Here we simulate the Phase 1 of the
+#' #    base configuration in Frutos-Galarza et al. (2026): 6 of the 30
+#' #    batches carry 4 outlying observations each, shifted 4 sigma, i.e.
+#' #    contamination the calibration must absorb without polluting the
+#' #    reference.
 #' sim <- simulate_batch_process(
-#'   K1 = 30, K2 = 0, I = 20, J = 4,
-#'   outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
-#'   prop_contam_F1 = 0.07, shift_contam = 3,
-#'   seed = 20260417
+#'   K1 = 30, K2 = 0, I = 20, J = 4, rho = 0.6,
+#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+#'   seed = 20260425
 #' )
 #' phase1 <- subset(sim, Phase == "Phase 1")
 #' vars   <- paste0("Var", 1:4)

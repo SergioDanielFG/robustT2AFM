@@ -108,15 +108,38 @@ side by side and draws no conclusion. Which method does better depends on
 how contaminated the calibration set is, and that is not something the
 package can determine from the data alone.
 }
+\section{Reading the example, and what it does not show}{
+
+The example below runs the base configuration of Frutos-Galarza et al.
+(2026) on one seed. With that seed the proposed method flags 8 of the 10
+off-target batches and the classical chart flags 2, neither raising a false
+alarm on the 10 in-control batches.
+
+Those are the counts of a single replication, not detection rates. The
+paper reports 0.863 for the proposed method and 0.270 for the classical one
+averaged over 2000 replications, and it measures them differently: there
+both methods are first equalised to a common in-control ARL0 using the
+empirical quantile of each method's own null distribution over 5000
+in-control batches, whereas this example applies each method's operational
+limit. The two figures describe similar but not identical quantities and
+should not be read as one estimating the other.
+
+The example also illustrates only half of the paper's argument. With a
+shift of 1 sigma and alpha = 0.001, what separates the two methods here is
+detection power: across twelve seeds and 200 replications neither method
+produced a single false alarm. Nothing in this example speaks to false
+alarm behaviour.
+}
+
 \examples{
-# A Phase 1 that is not clean (2 shifted batches plus within-batch
-# outliers) and a Phase 2 where 30\% of the batches are off-target.
+# Base configuration of Frutos-Galarza et al. (2026): 6 of the 30 Phase 1
+# batches carry 4 outlying observations each (shifted 4 sigma), and half
+# the Phase 2 batches are off-target by 1 sigma.
 sim <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4,
-  outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
-  prop_contam_F1 = 0.07, shift_contam = 3,
-  prop_ooc_F2 = 0.30, shift_ooc = 2,
-  seed = 20260417
+  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+  seed = 20260425
 )
 
 study <- run_afm_mcd(
@@ -130,8 +153,15 @@ study                      # the short answer
 summary(study)             # the full report
 study$monitoring           # the T2 of every Phase 2 batch
 
-# With the classical chart alongside, for context:
-# summary(run_afm_mcd(p1, p2, vars, compare_classical = TRUE))
+# The same run with the classical chart alongside. With this seed the
+# proposed method flags 8 of the 10 off-target batches and the classical
+# chart flags 2, with no false alarm from either. One replication is not
+# a detection rate: see the section above before quoting these counts.
+summary(run_afm_mcd(
+  subset(sim, Phase == "Phase 1"), subset(sim, Phase == "Phase 2"),
+  variables = paste0("Var", 1:4), plot = FALSE,
+  compare_classical = TRUE
+))
 }
 \references{
 Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &

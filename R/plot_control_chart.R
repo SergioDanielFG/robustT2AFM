@@ -69,10 +69,10 @@
 #' # simulate historical and monitoring data, calibrate, compute the
 #' # operational UCL, monitor Phase 2 and produce a labelled control chart.
 #' sim    <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4,
-#'   outlier_batches_F1 = 2, prop_contam_F1 = 0.07,
-#'   prop_ooc_F2 = 0.30, shift_ooc = 2,
-#'   seed = 20260417
+#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+#'   seed = 20260425
 #' )
 #' vars   <- paste0("Var", 1:4)
 #' cal    <- calibrate_afm_mcd(subset(sim, Phase == "Phase 1"), vars)

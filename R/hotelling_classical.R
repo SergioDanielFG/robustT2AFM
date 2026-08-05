@@ -208,9 +208,14 @@ hotelling_classical_calibrate <- function(data, variables) {
 #' @examples
 #' # Classical Hotelling Phase 2 monitoring, shown side-by-side with the
 #' # UCL and the OOC flag a quality engineer would use in production.
+#' # Base configuration of Frutos-Galarza et al. (2026). With this seed the
+#' # classical chart flags 2 of the 10 off-target batches; the AFM-MCD chart
+#' # on the same data flags 8. Single-replication counts, not rates: the
+#' # paper's averaged figures are quoted in run_afm_mcd().
 #' sim  <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4,
-#'   prop_ooc_F2 = 0.30, shift_ooc = 2, seed = 20260417
+#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0, seed = 20260425
 #' )
 #' vars <- paste0("Var", 1:4)
 #' cal  <- hotelling_classical_calibrate(

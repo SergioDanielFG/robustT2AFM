@@ -26,8 +26,14 @@ T-squared suffers from masking effects.
 library(robustT2AFM)
 
 # 1. Historical data with a "Batch" column and J numeric variables.
-sim    <- simulate_batch_process(K1 = 30, K2 = 20, I = 20, J = 4,
-                                 prop_ooc_F2 = 0.3, seed = 20260417)
+#    Base configuration of the paper: 6 of the 30 Phase 1 batches carry
+#    4 outlying observations each, and half the Phase 2 batches are
+#    off-target by 1 sigma.
+sim    <- simulate_batch_process(K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+                                 outlier_batches_F1 = 6, outlier_rate = 0.20,
+                                 outlier_shift = 4,
+                                 prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+                                 seed = 20260425)
 vars   <- paste0("Var", 1:4)
 
 # 2. Calibrate Phase 1.
