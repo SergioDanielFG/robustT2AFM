@@ -10,6 +10,7 @@
 ^tests/testthat/_snaps$
 ^\.covrignore$
 ^CLAUDE\.md$
+^NOTAS_METODOLOGICAS\.md$
 ^LICENSE\.md$
 ^\.positai$
 ^\.claude$

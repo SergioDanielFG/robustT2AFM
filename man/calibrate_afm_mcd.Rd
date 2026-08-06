@@ -34,8 +34,12 @@ most anomalous during Phase 1.}
 \item{mcd_covariances}{List of MCD covariance matrices per valid batch.}
 \item{lambda1}{Named vector of first eigenvalues per batch.}
 \item{mcd_alpha}{MCD alpha parameter used (for reference).}
-\item{I_phase1}{Observations per Phase 1 batch (size of the first valid
-batch), recorded so the UCL can detect a mismatching I.}
+\item{I_phase1}{Observations per Phase 1 batch, recorded so the UCL can
+detect a mismatching I. When the batches are not all the same size
+this is the mean batch size, rounded; see Details.}
+\item{batch_sizes}{Named integer vector with the size of every valid
+Phase 1 batch, so that downstream functions can check the
+equal-size assumption instead of trusting a single number.}
 }
 }
 \description{
@@ -60,6 +64,21 @@ receive less weight, following the AFM philosophy.
 The reference covariance matrix is:
 \deqn{S_w = \sum_k w_k S_k}
 where \eqn{S_k} is the MCD covariance of batch k.
+
+\strong{Batches of unequal size.} The calibration itself is well defined
+whatever the batch sizes: MCD, the weights, Sw and mu_r are computed per
+batch. The control limit is not: \code{\link{ucl_F_adjusted}} assumes a
+single common batch size I, through \eqn{m^* = round(I h)}. When the Phase 1
+batches differ in size the function warns and sets \code{I_phase1} to the
+batch size whose \eqn{m^*} equals the mean of the per-batch \eqn{m^*_k}:
+with unequal batches the degrees of freedom of the covariance estimate are
+\eqn{\sum_k (m^*_k - 1)}, and equating that to the formula's
+\eqn{K(m^* - 1)} gives \eqn{m^* = mean(m^*_k)}. That is
+\code{round(mean(round(I_k * h)) / h)}, which is \strong{not} the same as
+rounding the mean batch size: the two disagree for roughly one calibration
+in five. The minimum batch size is deliberately not used: it yields the
+widest limit, and a wider limit signals less, which is the failure mode
+this method exists to avoid.
 }
 \examples{
 # Typical quality-engineer workflow:

@@ -45,6 +45,16 @@
 #' alarms, missed detections), use the raw output of \code{monitor_*} and
 #' compute confusion matrices directly rather than relying on the plot.
 #'
+#' That restriction belongs to this function, not to the package. When the
+#' faulty batches genuinely are known - a simulation you generated, or a
+#' labelled benchmark such as Tennessee Eastman -
+#' \code{\link{plot_method_comparison}} will colour the points by truth if you
+#' hand it that truth through its \code{faulty} argument, which is how the
+#' published comparison figure is read: faulty batches sitting below a limit
+#' that never fired. That is a validation device. It has no place in
+#' production monitoring, where which batches are faulty is precisely the
+#' question the chart is being asked.
+#'
 #' For paired comparisons of two methods on the same data (e.g. classical
 #' Hotelling vs AFM-MCD), call \code{plot_control_chart} twice and display
 #' the two plots separately, which is the convention adopted in the package

@@ -10,7 +10,9 @@ plot_method_comparison(
   UCL_robust = NULL,
   UCL_classical = NULL,
   faulty = NULL,
-  near_miss = 0.2,
+  colour_by = c("auto", "truth", "decision"),
+  diagnostics = FALSE,
+  near_miss = NULL,
   scale = c("ratio", "T2"),
   labels = c("AFM-MCD (robust)", "Classical Hotelling"),
   save_path = NULL
@@ -36,18 +38,27 @@ is a study.}
 \item{faulty}{Optional character vector with the identifiers of the batches
 known to be faulty. Only supply it when that is genuinely known: a
 simulation you generated, or a labelled benchmark such as Tennessee
-Eastman. Default \code{NULL}, in which case the figure reports
-disagreement between the methods and never uses the word "missed". See
-Details.}
+Eastman. Default \code{NULL}. See Details.}
 
-\item{near_miss}{Numeric in (0, 1), or \code{NULL}. Width, as a fraction of
-the classical limit, of a shaded band drawn immediately below that limit
-in the classical panel. Default 0.20. \code{NULL} removes the band.}
+\item{colour_by}{One of \code{"auto"} (default), \code{"truth"} or
+\code{"decision"}. \code{"auto"} colours by truth when \code{faulty} is
+supplied and by the chart's own verdict otherwise. \code{"truth"} without
+\code{faulty} is an error, since there is no truth to colour by.}
+
+\item{diagnostics}{Logical. If \code{TRUE}, adds the marks that compare the
+two verdicts: a hollow ring on every batch signalled by one method and not
+the other, drawn in the panel that stayed silent, a dotted vertical guide
+through both panels at those batches, and a count in the corner of each
+panel. Default \code{FALSE}, which leaves the figure bare.}
+
+\item{near_miss}{Numeric in (0, 1), or \code{NULL} (default). When set,
+shades the band of that width immediately below the classical limit, as a
+fraction of it, in the classical panel only. See Details before reading
+anything into it.}
 
 \item{scale}{Either \code{"ratio"} (default) to plot each statistic divided
-by its own method's limit, which puts both panels on a common scale with
-a single reference line at 1.0, or \code{"T2"} to plot the raw
-statistics with independent vertical scales. See Details.}
+by its own method's limit, or \code{"T2"} to plot the raw statistics with
+independent vertical scales. See Details.}
 
 \item{labels}{Character vector of length 2 with the panel titles. Default
 \code{c("AFM-MCD (robust)", "Classical Hotelling")}.}
@@ -59,49 +70,55 @@ export as PNG (300 dpi) and PDF. Default \code{NULL} writes nothing.}
 A \code{ggplot} object with two panels.
 }
 \description{
-Draws both control charts as two stacked panels over the same Phase 2
-batches in the same order, each against its own control limit, so that a
-batch is a single vertical line crossing both panels. Batches that one
-method flags and the other does not are marked in both panels, which is
-what the figure exists to show.
+Draws both control charts side by side over the same Phase 2 batches in the
+same order, each against its own control limit. By default the figure is
+bare: two panels, a labelled limit line and a legend, with no explanatory
+text of any kind. Diagnostic marks are available on request.
 }
 \details{
 \strong{What this figure is about.} When Phase 1 contains contaminated
 batches, masking inflates the classical pooled covariance. A larger
 covariance produces a wider control limit, and a wider limit signals less
 often. The classical chart does not become nervous under contamination, it
-becomes deaf: the failure mode to illustrate is lost detection, not false
-alarms.
+becomes deaf, and the failure mode to illustrate is lost detection, not
+false alarms. That sentence is the whole point of the figure and it is
+deliberately not printed under it: a caption nobody reads is worse than no
+caption, because the lines that do matter get skipped with it.
 
-\strong{Disagreement versus missed detection.} Without \code{faulty}, the
-figure can only report which batches one method flags and the other does
-not. That is computable anywhere, including in production, where nobody
-knows which batches are truly faulty. Supplying \code{faulty} is a claim of
-ground truth, and only then does the figure count detections and describe a
-batch as missed. The distinction is kept in the wording: "flagged by one
-method only" without it, "missed" with it.
+\strong{Colouring by truth versus by verdict.} With \code{faulty} the points
+are coloured "In-control batch" and "Faulty batch", and the reader sees
+faulty batches sitting below a limit that never fired. Without it the
+colours can only show each chart's own verdict, "Signalled" and "No signal".
+Which batches are genuinely faulty is knowable in a simulation, because we
+generate it, and in a labelled benchmark such as Tennessee Eastman, because
+the data carries it. It is never knowable on a plant floor: that is the very
+thing the chart is there to find out. Colouring by truth therefore requires
+the caller to supply the truth, and is a validation device, not a production
+one. See \code{\link{plot_control_chart}}, which never colours by truth.
 
-\strong{Why \code{scale = "ratio"} is the default.} With raw statistics the
-two panels need independent vertical axes, because the robust and classical
-T-squared values are of different magnitudes. Independent axes make the
-panel heights meaningless to compare, and a reader who does not notice the
-caveat will read the shorter classical bars as if they meant something.
-Dividing each statistic by its own limit removes the problem: both panels
-then share one scale whose reference line is 1.0, and heights are directly
-comparable. It is the same device as the \code{x limit} column of
-\code{summary.afm_mcd_study}. \code{scale = "T2"} remains available and
-states the caveat in its own caption.
+\strong{Disagreement versus missed detection.} The diagnostic marks report
+which batches one method signals and the other does not, which is computable
+anywhere. Only when \code{faulty} is supplied do the counts become
+detections and the wording speak of batches missed.
 
-\strong{The near-miss band is a display device, not a verdict.} The band
-marks batches whose classical statistic falls within \code{near_miss} of
-the limit from below, which is how masking shows up: the signal is not
-absent, it is pushed under a limit that moved. The threshold is an argument
-because it is a choice, its definition is written into the legend, and the
-band is drawn only in the classical panel. The figure reports how many
-batches fall in the band and nothing more. A statistic at 85 percent of its
-limit was not "almost detected": the relation between T-squared and the
-probability of signalling is not linear, and the package makes no such
-claim.
+\strong{Why \code{scale = "ratio"} is the default.} Raw statistics force
+independent vertical axes, because the robust and classical T-squared values
+are of different magnitudes, and independent axes make the panel heights
+meaningless to compare. That needs a warning, and this figure has no caption
+to put one in. Dividing each statistic by its own limit removes the need for
+the warning instead of restating it: both panels then share one scale whose
+reference line is 1.0, the axis says so, and heights are directly
+comparable. \code{scale = "T2"} reproduces the look of the published figure
+and is the one case where a caption line appears, because there the figure
+has to defend itself against its own natural reading.
+
+\strong{The near-miss band is a display device, not a verdict.} It marks
+batches whose classical statistic falls within \code{near_miss} of the limit
+from below, which is how masking shows up: the signal is not absent, it is
+pushed under a limit that moved. The threshold is an argument because it is
+a choice. A statistic at 85 percent of its limit was not "almost detected":
+the relation between T-squared and the probability of signalling is not
+linear, and the package makes no such claim.
 }
 \examples{
 # Base configuration of Frutos-Galarza et al. (2026).
@@ -129,15 +146,14 @@ mon_c <- hotelling_classical_monitor(p2, cal_c, vars)
 
 plot_method_comparison(mon, mon_c, ucl$UCL, ucl_c$UCL)
 
-# In a simulation the faulty batches are known, so the figure may
-# count missed detections instead of mere disagreement.
-truth <- as.character(unique(
-  p2$Batch[p2$Status == "Out of Control"]
-))
+# In a simulation the faulty batches are known, so the points can be
+# coloured by truth: faulty batches sitting below a limit that never fired.
+truth <- as.character(unique(p2$Batch[p2$Status == "Out of Control"]))
 plot_method_comparison(study, faulty = truth)
 
-# Raw statistics, with the scale caveat stated in the caption.
-plot_method_comparison(study, scale = "T2")
+# Everything the bare figure leaves out, for a closer look.
+plot_method_comparison(study, faulty = truth,
+                       diagnostics = TRUE, near_miss = 0.20)
 }
 \references{
 Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &

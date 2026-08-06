@@ -73,8 +73,15 @@ ucl_F_adjusted <- function(calibration, I, alpha = 0.001) {
     stop("'alpha' must be a single numeric value in (0, 1).")
   }
 
-  # --- Defensive check: I must match the Phase 1 batch size used in calibration ---
-  if (!is.null(calibration$I_phase1) && calibration$I_phase1 != I) {
+  # --- Defensive check on the batch size ---
+  # Con lotes desiguales no hay un I correcto que comprobar: el limite es una
+  # aproximacion se pase el que se pase, y eso es lo que hay que decir.
+  sizes <- calibration$batch_sizes
+  if (!is.null(sizes) && length(unique(as.integer(sizes))) > 1L) {
+    warning("Phase 1 batch sizes were not equal (", min(sizes), " to ",
+            max(sizes), "), so this limit is an approximation whichever I is ",
+            "passed. Computed with I = ", I, ".", call. = FALSE)
+  } else if (!is.null(calibration$I_phase1) && calibration$I_phase1 != I) {
     warning("'I' (", I, ") does not match the Phase 1 batch size recorded ",
             "during calibration (I_phase1 = ", calibration$I_phase1, "). ",
             "m* will be computed with I = ", I, ".")

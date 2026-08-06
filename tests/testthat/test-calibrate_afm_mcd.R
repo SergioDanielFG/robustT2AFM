@@ -8,7 +8,8 @@ test_that("calibrate_afm_mcd returns a coherent AFM/MCD reference", {
   # Return structure ---------------------------------------------------------
   expect_type(cal, "list")
   expect_named(cal, c("mu_r", "Sw", "weights", "mcd_centers",
-                      "mcd_covariances", "lambda1", "mcd_alpha", "I_phase1"))
+                      "mcd_covariances", "lambda1", "mcd_alpha", "I_phase1",
+                      "batch_sizes"))
   # mcd_clean_obs was removed together with the bootstrap UCL.
   expect_false("mcd_clean_obs" %in% names(cal))
 
@@ -31,6 +32,80 @@ test_that("calibrate_afm_mcd returns a coherent AFM/MCD reference", {
 
   # mu_r has length J.
   expect_length(cal$mu_r, 4L)
+})
+
+test_that("unequal Phase 1 batches are announced and not silently averaged over", {
+  sim  <- simulate_batch_process(K1 = 6, K2 = 0, I = 20, J = 4,
+                                 seed = 20260425)
+  vars <- paste0("Var", 1:4)
+
+  # Equal batches: silent, and I_phase1 is that size.
+  cal_eq <- calibrate_afm_mcd(sim, vars)
+  expect_equal(cal_eq$I_phase1, 20L)
+  expect_equal(unname(cal_eq$batch_sizes), rep(20L, 6))
+
+  # Two shortened batches, as happens when a run stops early or rows are
+  # discarded. Sizes 14, 17, 20, 20, 20, 20: the per-batch m* are 9, 11 and
+  # 13 x 4, whose mean is 12, and the I giving m* = 12 is round(12/0.67) = 18.
+  drop <- c(rownames(sim[sim$Batch == "F1_B01", ])[1:6],
+            rownames(sim[sim$Batch == "F1_B02", ])[1:3])
+  uneq <- sim[!rownames(sim) %in% drop, ]
+
+  expect_warning(cal_un <- calibrate_afm_mcd(uneq, vars),
+                 "do not all have the same number of observations")
+  expect_warning(calibrate_afm_mcd(uneq, vars), "range from 14 to 20")
+  expect_warning(calibrate_afm_mcd(uneq, vars), "4 of the 6 batches have 20")
+  expect_warning(calibrate_afm_mcd(uneq, vars), "equals 12")
+  expect_warning(calibrate_afm_mcd(uneq, vars), "ucl_F_adjusted\\(calibration")
+
+  expect_equal(unname(cal_un$batch_sizes), c(14L, 17L, 20L, 20L, 20L, 20L))
+  expect_equal(cal_un$I_phase1, 18L)          # not the first batch (14)
+
+  # The recorded size no longer depends on which batch happens to come first.
+  rev_order <- uneq[order(uneq$Batch, decreasing = TRUE), ]
+  expect_equal(suppressWarnings(
+    calibrate_afm_mcd(rev_order, vars)$I_phase1), cal_un$I_phase1)
+})
+
+test_that("I_phase1 follows mean(m*_k), not the rounded mean batch size", {
+  sim  <- simulate_batch_process(K1 = 6, K2 = 0, I = 20, J = 4,
+                                 seed = 20260425)
+  vars <- paste0("Var", 1:4)
+
+  # Sizes 11, 11, 12, 20, 20, 20 is a case where the two rules disagree:
+  #   mean(round(I_k * h))       = (7 + 7 + 8 + 13*3)/6 = 10.167 -> m* = 10
+  #     -> I = round(10/0.67)    = 15
+  #   round(mean(I_k) * h)       = round(round(15.667) * 0.67) = 11  -> I = 16
+  drop <- c(rownames(sim[sim$Batch == "F1_B01", ])[1:9],
+            rownames(sim[sim$Batch == "F1_B02", ])[1:9],
+            rownames(sim[sim$Batch == "F1_B03", ])[1:8])
+  uneq <- sim[!rownames(sim) %in% drop, ]
+
+  cal <- suppressWarnings(calibrate_afm_mcd(uneq, vars))
+  expect_equal(unname(cal$batch_sizes), c(11L, 11L, 12L, 20L, 20L, 20L))
+  expect_equal(cal$I_phase1, 15L)             # the m*-matching size
+  expect_false(cal$I_phase1 == 16L)           # not the rounded mean size
+
+  # And the recorded size really does reproduce the intended m*.
+  expect_equal(round(cal$I_phase1 * cal$mcd_alpha), 10)
+  expect_equal(suppressWarnings(
+    ucl_F_adjusted(cal, I = cal$I_phase1)$parameters$m_star), 10)
+})
+
+test_that("ucl_F_adjusted reports that an unequal calibration has no exact I", {
+  cal <- list(Sw = diag(4), mcd_alpha = 0.67,
+              weights = setNames(rep(1 / 30, 30), paste0("B", 1:30)),
+              I_phase1 = 18L,
+              batch_sizes = c(rep(20L, 28), 14L, 17L))
+
+  expect_warning(ucl_F_adjusted(cal, I = 18),
+                 "not equal \\(14 to 20\\).*approximation")
+
+  # With equal sizes the historical mismatch warning is untouched.
+  cal$batch_sizes <- rep(20L, 30)
+  cal$I_phase1    <- 20L
+  expect_warning(ucl_F_adjusted(cal, I = 15), "does not match the Phase 1")
+  expect_silent(ucl_F_adjusted(cal, I = 20))
 })
 
 test_that("calibrate_afm_mcd validates its inputs", {

@@ -1,10 +1,9 @@
 #' Compare the Robust and Classical Charts on the Same Phase 2 Batches
 #'
-#' Draws both control charts as two stacked panels over the same Phase 2
-#' batches in the same order, each against its own control limit, so that a
-#' batch is a single vertical line crossing both panels. Batches that one
-#' method flags and the other does not are marked in both panels, which is
-#' what the figure exists to show.
+#' Draws both control charts side by side over the same Phase 2 batches in the
+#' same order, each against its own control limit. By default the figure is
+#' bare: two panels, a labelled limit line and a legend, with no explanatory
+#' text of any kind. Diagnostic marks are available on request.
 #'
 #' @param robust Either an \code{afm_mcd_study} returned by
 #'   \code{\link{run_afm_mcd}} with \code{compare_classical = TRUE}, or the
@@ -21,16 +20,23 @@
 #' @param faulty Optional character vector with the identifiers of the batches
 #'   known to be faulty. Only supply it when that is genuinely known: a
 #'   simulation you generated, or a labelled benchmark such as Tennessee
-#'   Eastman. Default \code{NULL}, in which case the figure reports
-#'   disagreement between the methods and never uses the word "missed". See
-#'   Details.
-#' @param near_miss Numeric in (0, 1), or \code{NULL}. Width, as a fraction of
-#'   the classical limit, of a shaded band drawn immediately below that limit
-#'   in the classical panel. Default 0.20. \code{NULL} removes the band.
+#'   Eastman. Default \code{NULL}. See Details.
+#' @param colour_by One of \code{"auto"} (default), \code{"truth"} or
+#'   \code{"decision"}. \code{"auto"} colours by truth when \code{faulty} is
+#'   supplied and by the chart's own verdict otherwise. \code{"truth"} without
+#'   \code{faulty} is an error, since there is no truth to colour by.
+#' @param diagnostics Logical. If \code{TRUE}, adds the marks that compare the
+#'   two verdicts: a hollow ring on every batch signalled by one method and not
+#'   the other, drawn in the panel that stayed silent, a dotted vertical guide
+#'   through both panels at those batches, and a count in the corner of each
+#'   panel. Default \code{FALSE}, which leaves the figure bare.
+#' @param near_miss Numeric in (0, 1), or \code{NULL} (default). When set,
+#'   shades the band of that width immediately below the classical limit, as a
+#'   fraction of it, in the classical panel only. See Details before reading
+#'   anything into it.
 #' @param scale Either \code{"ratio"} (default) to plot each statistic divided
-#'   by its own method's limit, which puts both panels on a common scale with
-#'   a single reference line at 1.0, or \code{"T2"} to plot the raw
-#'   statistics with independent vertical scales. See Details.
+#'   by its own method's limit, or \code{"T2"} to plot the raw statistics with
+#'   independent vertical scales. See Details.
 #' @param labels Character vector of length 2 with the panel titles. Default
 #'   \code{c("AFM-MCD (robust)", "Classical Hotelling")}.
 #' @param save_path Optional character. Path stem (without extension) for
@@ -43,38 +49,45 @@
 #' batches, masking inflates the classical pooled covariance. A larger
 #' covariance produces a wider control limit, and a wider limit signals less
 #' often. The classical chart does not become nervous under contamination, it
-#' becomes deaf: the failure mode to illustrate is lost detection, not false
-#' alarms.
+#' becomes deaf, and the failure mode to illustrate is lost detection, not
+#' false alarms. That sentence is the whole point of the figure and it is
+#' deliberately not printed under it: a caption nobody reads is worse than no
+#' caption, because the lines that do matter get skipped with it.
 #'
-#' \strong{Disagreement versus missed detection.} Without \code{faulty}, the
-#' figure can only report which batches one method flags and the other does
-#' not. That is computable anywhere, including in production, where nobody
-#' knows which batches are truly faulty. Supplying \code{faulty} is a claim of
-#' ground truth, and only then does the figure count detections and describe a
-#' batch as missed. The distinction is kept in the wording: "flagged by one
-#' method only" without it, "missed" with it.
+#' \strong{Colouring by truth versus by verdict.} With \code{faulty} the points
+#' are coloured "In-control batch" and "Faulty batch", and the reader sees
+#' faulty batches sitting below a limit that never fired. Without it the
+#' colours can only show each chart's own verdict, "Signalled" and "No signal".
+#' Which batches are genuinely faulty is knowable in a simulation, because we
+#' generate it, and in a labelled benchmark such as Tennessee Eastman, because
+#' the data carries it. It is never knowable on a plant floor: that is the very
+#' thing the chart is there to find out. Colouring by truth therefore requires
+#' the caller to supply the truth, and is a validation device, not a production
+#' one. See \code{\link{plot_control_chart}}, which never colours by truth.
 #'
-#' \strong{Why \code{scale = "ratio"} is the default.} With raw statistics the
-#' two panels need independent vertical axes, because the robust and classical
-#' T-squared values are of different magnitudes. Independent axes make the
-#' panel heights meaningless to compare, and a reader who does not notice the
-#' caveat will read the shorter classical bars as if they meant something.
-#' Dividing each statistic by its own limit removes the problem: both panels
-#' then share one scale whose reference line is 1.0, and heights are directly
-#' comparable. It is the same device as the \code{x limit} column of
-#' \code{summary.afm_mcd_study}. \code{scale = "T2"} remains available and
-#' states the caveat in its own caption.
+#' \strong{Disagreement versus missed detection.} The diagnostic marks report
+#' which batches one method signals and the other does not, which is computable
+#' anywhere. Only when \code{faulty} is supplied do the counts become
+#' detections and the wording speak of batches missed.
 #'
-#' \strong{The near-miss band is a display device, not a verdict.} The band
-#' marks batches whose classical statistic falls within \code{near_miss} of
-#' the limit from below, which is how masking shows up: the signal is not
-#' absent, it is pushed under a limit that moved. The threshold is an argument
-#' because it is a choice, its definition is written into the legend, and the
-#' band is drawn only in the classical panel. The figure reports how many
-#' batches fall in the band and nothing more. A statistic at 85 percent of its
-#' limit was not "almost detected": the relation between T-squared and the
-#' probability of signalling is not linear, and the package makes no such
-#' claim.
+#' \strong{Why \code{scale = "ratio"} is the default.} Raw statistics force
+#' independent vertical axes, because the robust and classical T-squared values
+#' are of different magnitudes, and independent axes make the panel heights
+#' meaningless to compare. That needs a warning, and this figure has no caption
+#' to put one in. Dividing each statistic by its own limit removes the need for
+#' the warning instead of restating it: both panels then share one scale whose
+#' reference line is 1.0, the axis says so, and heights are directly
+#' comparable. \code{scale = "T2"} reproduces the look of the published figure
+#' and is the one case where a caption line appears, because there the figure
+#' has to defend itself against its own natural reading.
+#'
+#' \strong{The near-miss band is a display device, not a verdict.} It marks
+#' batches whose classical statistic falls within \code{near_miss} of the limit
+#' from below, which is how masking shows up: the signal is not absent, it is
+#' pushed under a limit that moved. The threshold is an argument because it is
+#' a choice. A statistic at 85 percent of its limit was not "almost detected":
+#' the relation between T-squared and the probability of signalling is not
+#' linear, and the package makes no such claim.
 #'
 #' @references
 #' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
@@ -87,6 +100,7 @@
 #'   scale_y_continuous expansion theme_minimal theme element_text
 #'   element_blank element_line margin ggsave
 #' @importFrom rlang .data
+#' @importFrom stats setNames
 #' @export
 #'
 #' @examples
@@ -115,27 +129,29 @@
 #'
 #' plot_method_comparison(mon, mon_c, ucl$UCL, ucl_c$UCL)
 #'
-#' # In a simulation the faulty batches are known, so the figure may
-#' # count missed detections instead of mere disagreement.
-#' truth <- as.character(unique(
-#'   p2$Batch[p2$Status == "Out of Control"]
-#' ))
+#' # In a simulation the faulty batches are known, so the points can be
+#' # coloured by truth: faulty batches sitting below a limit that never fired.
+#' truth <- as.character(unique(p2$Batch[p2$Status == "Out of Control"]))
 #' plot_method_comparison(study, faulty = truth)
 #'
-#' # Raw statistics, with the scale caveat stated in the caption.
-#' plot_method_comparison(study, scale = "T2")
+#' # Everything the bare figure leaves out, for a closer look.
+#' plot_method_comparison(study, faulty = truth,
+#'                        diagnostics = TRUE, near_miss = 0.20)
 plot_method_comparison <- function(robust,
                                    classical = NULL,
                                    UCL_robust = NULL,
                                    UCL_classical = NULL,
                                    faulty = NULL,
-                                   near_miss = 0.20,
+                                   colour_by = c("auto", "truth", "decision"),
+                                   diagnostics = FALSE,
+                                   near_miss = NULL,
                                    scale = c("ratio", "T2"),
                                    labels = c("AFM-MCD (robust)",
                                               "Classical Hotelling"),
                                    save_path = NULL) {
 
-  scale <- match.arg(scale)
+  scale     <- match.arg(scale)
+  colour_by <- match.arg(colour_by)
 
   # --- Resolve the two input forms ---
   if (inherits(robust, "afm_mcd_study")) {
@@ -188,10 +204,15 @@ plot_method_comparison <- function(robust,
          "cannot be compared batch by batch. Run both methods on the same ",
          "Phase 2 data.")
   }
-  # Se reordena el clasico al orden del robusto: cada lote es una vertical.
+  # Se reordena el clasico al orden del robusto: cada lote ocupa la misma
+  # posicion en los dos paneles.
   mon_c <- mon_c[match(b_r, b_c), , drop = FALSE]
 
   # --- Remaining validation ---
+  if (!is.logical(diagnostics) || length(diagnostics) != 1 ||
+      is.na(diagnostics)) {
+    stop("'diagnostics' must be TRUE or FALSE.")
+  }
   if (!is.null(near_miss)) {
     if (!is.numeric(near_miss) || length(near_miss) != 1 ||
         !is.finite(near_miss) || near_miss <= 0 || near_miss >= 1) {
@@ -211,6 +232,12 @@ plot_method_comparison <- function(robust,
            paste(unknown, collapse = ", "),
            ". 'faulty' must list identifiers that appear in the Phase 2 data.")
     }
+  }
+  if (colour_by == "truth" && is.null(faulty)) {
+    stop("colour_by = \"truth\" needs the truth: pass 'faulty' with the ",
+         "identifiers of the batches known to be faulty. That is knowable in ",
+         "a simulation or a labelled benchmark, never in production, which is ",
+         "why the package will not guess it.")
   }
   if (!is.null(save_path)) {
     if (!is.character(save_path) || length(save_path) != 1 ||
@@ -234,36 +261,20 @@ plot_method_comparison <- function(robust,
     stringsAsFactors = FALSE
   )
   plot_df$y <- if (scale == "ratio") plot_df$T2 / plot_df$UCL else plot_df$T2
-  plot_df$Status <- factor(ifelse(plot_df$flagged, "Signalled", "No signal"),
-                           levels = c("No signal", "Signalled"))
 
-  # --- Disagreement: flagged by one method only, in either direction ---
-  only_r <- b_r[flag_r & !flag_c]
-  only_c <- b_r[flag_c & !flag_r]
-  disagree <- c(only_r, only_c)
-
-  # El anillo va en el panel donde el lote NO suena.
-  ring_df <- rbind(
-    plot_df[plot_df$Method == labels[2] & plot_df$Batch %in% only_r, ],
-    plot_df[plot_df$Method == labels[1] & plot_df$Batch %in% only_c, ]
-  )
-
-  # --- Per-panel counts ---
-  n_faulty <- if (is.null(faulty)) NA_integer_ else length(faulty)
-  count_label <- function(flag) {
-    if (is.null(faulty)) {
-      sprintf("signalled %d of %d batches", sum(flag), K)
-    } else {
-      is_f <- b_r %in% faulty
-      sprintf("detected %d of %d faulty  |  %d false alarm(s)",
-              sum(flag & is_f), n_faulty, sum(flag & !is_f))
-    }
+  # --- Colour: truth when it was supplied, verdict otherwise ---
+  by_truth <- colour_by == "truth" ||
+    (colour_by == "auto" && !is.null(faulty))
+  if (by_truth) {
+    lv <- c("In-control batch", "Faulty batch")
+    plot_df$Status <- factor(
+      ifelse(plot_df$Batch %in% faulty, lv[2], lv[1]), levels = lv
+    )
+  } else {
+    lv <- c("No signal", "Signalled")
+    plot_df$Status <- factor(ifelse(plot_df$flagged, lv[2], lv[1]), levels = lv)
   }
-  ann_df <- data.frame(
-    Method = factor(labels, levels = labels),
-    label  = c(count_label(flag_r), count_label(flag_c)),
-    stringsAsFactors = FALSE
-  )
+  color_map <- stats::setNames(c("#3FA9B6", "#A02D31"), lv)
 
   # --- Reference line, one per panel ---
   hline_df <- data.frame(
@@ -277,69 +288,46 @@ plot_method_comparison <- function(robust,
     stringsAsFactors = FALSE
   )
 
-  # --- Near-miss band, classical panel only ---
-  band_df <- NULL
-  n_band  <- 0L
+  # --- Build the plot: bare unless something is asked for ---
+  p <- ggplot2::ggplot()
+
   if (!is.null(near_miss)) {
     lo <- (1 - near_miss) * ucl_c
-    n_band <- sum(mon_c$T2 >= lo & mon_c$T2 <= ucl_c)
     band_df <- data.frame(
       Method = factor(labels[2], levels = labels),
       ymin   = if (scale == "ratio") 1 - near_miss else lo,
       ymax   = if (scale == "ratio") 1 else ucl_c,
       stringsAsFactors = FALSE
     )
+    band_df$label <- sprintf("within %.0f%% of the limit", 100 * near_miss)
+    p <- p +
+      ggplot2::geom_rect(
+        data = band_df,
+        mapping = ggplot2::aes(xmin = -Inf, xmax = Inf,
+                               ymin = .data$ymin, ymax = .data$ymax),
+        fill = "#A02D31", alpha = 0.08, inherit.aes = FALSE
+      ) +
+      ggplot2::geom_text(
+        data = band_df,
+        mapping = ggplot2::aes(x = Inf,
+                               y = (.data$ymin + .data$ymax) / 2,
+                               label = .data$label),
+        hjust = 1.03, vjust = 0.5, size = 2.6, color = "#A02D31",
+        inherit.aes = FALSE
+      )
   }
 
-  # --- Caption: mechanism first, then what each device means ---
-  cap <- paste0(
-    "Masking inflates the Phase 1 covariance, which widens the limit; a ",
-    "wider limit signals less often.\n",
-    if (scale == "ratio") {
-      paste0("Both panels share one scale: T2 divided by each method's own ",
-             "limit, so 1.0 is that limit and heights are comparable.\n")
-    } else {
-      paste0("Panels use independent vertical scales: the heights are NOT ",
-             "comparable between panels.\n")
-    },
+  if (isTRUE(diagnostics)) {
+    only_r <- b_r[flag_r & !flag_c]
+    only_c <- b_r[flag_c & !flag_r]
+    disagree <- c(only_r, only_c)
+
     if (length(disagree) > 0) {
-      paste0("Ringed and marked by a vertical guide: ",
-             if (is.null(faulty)) {
-               paste0(length(disagree),
-                      " batch(es) signalled by one method only.\n")
-             } else {
-               paste0(sum(only_r %in% faulty),
-                      " faulty batch(es) missed by the classical chart and ",
-                      "caught by the robust one.\n")
-             })
-    } else "",
-    if (!is.null(near_miss)) {
-      sprintf(paste0("Shaded band: within %.0f%% below the classical limit ",
-                     "(%d batch(es)). This counts batches, it does not mean ",
-                     "they were almost detected."),
-              100 * near_miss, n_band)
-    } else ""
-  )
-
-  color_map <- c("No signal" = "#3FA9B6", "Signalled" = "#A02D31")
-
-  # --- Build the plot ---
-  p <- ggplot2::ggplot()
-
-  if (!is.null(band_df)) {
-    p <- p + ggplot2::geom_rect(
-      data = band_df,
-      mapping = ggplot2::aes(xmin = -Inf, xmax = Inf,
-                             ymin = .data$ymin, ymax = .data$ymax),
-      fill = "#A02D31", alpha = 0.08, inherit.aes = FALSE
-    )
-  }
-
-  if (length(disagree) > 0) {
-    p <- p + ggplot2::geom_vline(
-      xintercept = which(b_r %in% disagree),
-      color = "#A02D31", linetype = "dotted", linewidth = 0.4
-    )
+      p <- p + ggplot2::geom_vline(
+        xintercept = which(b_r %in% disagree),
+        color = "#A02D31", linetype = "dotted", linewidth = 0.4
+      )
+    }
   }
 
   p <- p +
@@ -354,43 +342,78 @@ plot_method_comparison <- function(robust,
                              color = .data$Status),
       size = 2.4
     ) +
-    ggplot2::scale_color_manual(values = color_map, drop = FALSE,
-                                name = NULL)
+    ggplot2::scale_color_manual(values = color_map, drop = FALSE, name = NULL)
 
-  # Anillo sin etiqueta: el eje x ya lleva el identificador y la guia vertical
-  # baja hasta el. Etiquetar cada anillo produce solapes cuando los lotes en
-  # desacuerdo son consecutivos.
-  if (nrow(ring_df) > 0) {
-    p <- p + ggplot2::geom_point(
-      data = ring_df,
-      mapping = ggplot2::aes(x = .data$BatchIdx, y = .data$y),
-      shape = 21, size = 4.4, stroke = 0.9,
-      color = "#A02D31", fill = NA, inherit.aes = FALSE
+  if (isTRUE(diagnostics)) {
+    only_r <- b_r[flag_r & !flag_c]
+    only_c <- b_r[flag_c & !flag_r]
+
+    # El anillo va en el panel donde el lote NO suena.
+    ring_df <- rbind(
+      plot_df[plot_df$Method == labels[2] & plot_df$Batch %in% only_r, ],
+      plot_df[plot_df$Method == labels[1] & plot_df$Batch %in% only_c, ]
+    )
+    if (nrow(ring_df) > 0) {
+      p <- p + ggplot2::geom_point(
+        data = ring_df,
+        mapping = ggplot2::aes(x = .data$BatchIdx, y = .data$y),
+        shape = 21, size = 4.4, stroke = 0.9,
+        color = "#A02D31", fill = NA, inherit.aes = FALSE
+      )
+    }
+
+    count_label <- function(flag) {
+      if (is.null(faulty)) {
+        sprintf("signalled %d of %d", sum(flag), K)
+      } else {
+        is_f <- b_r %in% faulty
+        sprintf("detected %d of %d faulty, %d false alarm(s)",
+                sum(flag & is_f), length(faulty), sum(flag & !is_f))
+      }
+    }
+    ann_df <- data.frame(
+      Method = factor(labels, levels = labels),
+      label  = c(count_label(flag_r), count_label(flag_c)),
+      stringsAsFactors = FALSE
+    )
+    p <- p + ggplot2::geom_text(
+      data = ann_df,
+      mapping = ggplot2::aes(x = -Inf, y = Inf, label = .data$label),
+      hjust = -0.04, vjust = 1.6, size = 3, fontface = "bold",
+      color = "grey25", inherit.aes = FALSE
     )
   }
 
+  # Etiquetas del eje x: identificadores reales, adelgazados si son muchos.
+  # Nunca posiciones: quien ve F2_B01, F2_B03 ubica el resto contando; quien
+  # ve 1, 3 pierde la trazabilidad a su lote.
+  brk <- seq_len(K)
+  if (K > 15) brk <- brk[seq(1L, K, by = 2L)]
+
+  # El pie existe solo cuando la figura necesita defenderse de su lectura
+  # natural, es decir con escalas libres.
+  cap <- if (scale == "T2") {
+    paste0("Panels use independent vertical scales: heights are NOT ",
+           "comparable between panels.")
+  } else {
+    NULL
+  }
+
   p <- p +
-    ggplot2::geom_text(
-      data = ann_df,
-      mapping = ggplot2::aes(x = -Inf, y = Inf, label = .data$label),
-      hjust = -0.04, vjust = 1.6, size = 3.2, fontface = "bold",
-      color = "grey25", inherit.aes = FALSE
-    ) +
     ggplot2::geom_text(
       data = hline_df,
       mapping = ggplot2::aes(x = Inf, y = .data$y, label = .data$label),
       hjust = 1.03, vjust = -0.6, size = 3, color = "#A02D31",
       inherit.aes = FALSE
     ) +
-    # Aire extra arriba: el recuento se dibuja en la esquina superior y si no
-    # se amplia el rango choca con los puntos mas altos del panel.
+    ggplot2::scale_x_continuous(breaks = brk, labels = b_r[brk],
+                                expand = c(0.04, 0.04)) +
     ggplot2::scale_y_continuous(
-      expand = ggplot2::expansion(mult = c(0.05, 0.20))
+      expand = ggplot2::expansion(mult = c(0.05, 0.15))
     ) +
-    ggplot2::facet_wrap(ggplot2::vars(.data$Method), ncol = 1,
+    ggplot2::facet_wrap(ggplot2::vars(.data$Method), ncol = 2,
                         scales = if (scale == "ratio") "fixed" else "free_y") +
     ggplot2::labs(
-      title = "Same Phase 2 batches, two methods",
       x = "Batch",
       y = if (scale == "ratio") {
         "T2 / own control limit"
@@ -401,9 +424,6 @@ plot_method_comparison <- function(robust,
     ) +
     ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(
-      plot.title         = ggplot2::element_text(face = "bold", size = 13,
-                                                 hjust = 0.5,
-                                                 margin = ggplot2::margin(b = 8)),
       plot.caption       = ggplot2::element_text(size = 7.5, hjust = 0,
                                                  color = "grey35",
                                                  margin = ggplot2::margin(t = 8)),
@@ -418,15 +438,11 @@ plot_method_comparison <- function(robust,
       plot.margin        = ggplot2::margin(t = 8, r = 12, b = 8, l = 8)
     )
 
-  # Etiquetas del eje x: identificadores, no indices.
-  p <- p + ggplot2::scale_x_continuous(breaks = seq_len(K), labels = b_r,
-                                       expand = c(0.03, 0.03))
-
   if (!is.null(save_path)) {
     ggplot2::ggsave(paste0(save_path, ".png"), plot = p,
-                    width = 7, height = 6.5, units = "in", dpi = 300)
+                    width = 9, height = 4.5, units = "in", dpi = 300)
     ggplot2::ggsave(paste0(save_path, ".pdf"), plot = p,
-                    width = 7, height = 6.5, units = "in")
+                    width = 9, height = 4.5, units = "in")
   }
 
   return(p)
