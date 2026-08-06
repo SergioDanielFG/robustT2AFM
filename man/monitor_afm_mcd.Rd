@@ -4,11 +4,17 @@
 \alias{monitor_afm_mcd}
 \title{Monitor New Batches Using AFM-MCD Calibration (Phase 2)}
 \usage{
-monitor_afm_mcd(new_data, calibration, variables, ucl = NULL)
+monitor_afm_mcd(
+  new_data,
+  calibration,
+  variables,
+  ucl = NULL,
+  batch_col = "Batch"
+)
 }
 \arguments{
 \item{new_data}{A data frame containing the new batches to evaluate. Must
-contain a column named 'Batch' identifying each batch.}
+contain a column identifying each batch; see \code{batch_col}.}
 
 \item{calibration}{A list returned by \code{\link{calibrate_afm_mcd}}
 containing mu_r and Sw from Phase 1 calibration.}
@@ -21,6 +27,11 @@ compare each T-squared against, normally \code{ucl_F_adjusted(cal, I)$UCL}.
 Pass the number itself, not the list returned by
 \code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case the
 output has exactly the three columns described below.}
+
+\item{batch_col}{Character. Name of the column that identifies the batch in
+\code{new_data}. Default \code{"Batch"}. This renames only what is read:
+the returned data frame always calls its first column \code{Batch},
+because the plotting functions and the study object depend on that name.}
 }
 \value{
 A data frame with one row per batch and columns:
@@ -64,29 +75,21 @@ Supplying \code{ucl} only adds the \code{is_ooc} column; the T-squared
 values are computed identically with and without it.
 }
 \examples{
-# Base configuration of Frutos-Galarza et al. (2026): 6 contaminated
-# Phase 1 batches, and half the Phase 2 batches off-target by 1 sigma.
-sim <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-  seed = 20260425
-)
-vars   <- paste0("Var", 1:4)
-phase1 <- subset(sim, Phase == "Phase 1")
-phase2 <- subset(sim, Phase == "Phase 2")
+data(afm_phase1)
+data(afm_phase2)
+vars <- paste0("Var", 1:4)
 
 # Phase 1 calibration, operational UCL and Phase 2 monitoring.
-cal <- calibrate_afm_mcd(phase1, vars)
+cal <- calibrate_afm_mcd(afm_phase1, vars)
 ucl <- ucl_F_adjusted(cal, I = 20)$UCL
-mon <- monitor_afm_mcd(phase2, cal, vars, ucl = ucl)
+mon <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl)
 
 mon[mon$is_ooc, ]                        # batches to investigate
 sum(mon$is_ooc)                          # how many alarms fired
 
 # Without 'ucl' you get the T-squared values only, and compare them
 # yourself against whatever limit you prefer.
-mon_plain <- monitor_afm_mcd(phase2, cal, vars)
+mon_plain <- monitor_afm_mcd(afm_phase2, cal, vars)
 names(mon_plain)
 }
 \references{

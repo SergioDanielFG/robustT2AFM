@@ -49,25 +49,28 @@ of the classical chart is preserved, but the masking is gone.
 
 ## 2. Same data, two charts
 
-To make the point concrete, we use the base configuration of
-Frutos-Galarza et al. (2026): a Phase 1 in which 6 of the 30 batches
-carry 4 outlying observations each (shifted 4 sigma), and a Phase 2 in
-which half the batches are off-target by 1 sigma. We then run the
-classical chart and the AFM-MCD chart on the **same** data.
+To make the point concrete, the package ships the base configuration of
+Frutos-Galarza et al. (2026) ready to use: `afm_phase1`, in which 6 of
+the 30 batches carry 4 outlying observations each (shifted 4 sigma),
+and `afm_phase2`, in which half the batches are off-target by 1 sigma.
+We run the classical chart and the AFM-MCD chart on the **same** data.
 
 ```{r sim}
 library(robustT2AFM)
 
-sim <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-  seed = 20260425
-)
+data(afm_phase1)
+data(afm_phase2)
 vars   <- paste0("Var", 1:4)
-phase1 <- subset(sim, Phase == "Phase 1")
-phase2 <- subset(sim, Phase == "Phase 2")
+phase1 <- afm_phase1
+phase2 <- afm_phase2
 ```
+
+Both objects also carry `Status` and `ContaminationType`, which say
+which batches are contaminated. They exist because these are simulated
+data. Your own historical data will not have them, and the method does
+not need them: which batches are out of control is the question the
+chart answers, not an input it requires. Use
+`simulate_batch_process()` if you want a different scenario.
 
 Classical Hotelling (baseline):
 
@@ -127,25 +130,39 @@ In production you load them with `read.csv()` or your MES connector.
 In this vignette we keep the simulator so the code is reproducible:
 
 ```r
-# In practice, replace this line with your data load:
-#   raw <- read.csv("historical_batches.csv")
-# and split into phase1 / phase2 as you already do.
-raw <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-  seed = 20260425
-)
+# In practice you load one export and split it by phase:
+#   raw    <- read.csv("historical_batches.csv")
+#   phase1 <- subset(raw, Phase == "Phase 1")
+#   phase2 <- subset(raw, Phase == "Phase 2")
+# Here we use the two data sets shipped with the package.
+data(afm_phase1)
+data(afm_phase2)
 ```
 
-Then the entire chart is four operational calls:
+If your batch identifier is not called `Batch`, say so instead of
+renaming your data:
+
+```r
+cal <- calibrate_afm_mcd(my_phase1, vars, batch_col = "Lote")
+```
+
+Then the whole study is one call, and the variables are detected for
+you if every other column is non-numeric:
+
+```r
+study <- run_afm_mcd(afm_phase1, afm_phase2)
+study            # how many batches are out of control, and which
+summary(study)   # the full report
+```
+
+The four steps it chains are also available separately, which is how
+the paper's own scripts are written:
 
 ```r
 vars <- paste0("Var", 1:4)
-cal  <- calibrate_afm_mcd(subset(raw, Phase == "Phase 1"), vars)
+cal  <- calibrate_afm_mcd(afm_phase1, vars)
 ucl  <- ucl_F_adjusted(cal, I = 20)
-mon  <- monitor_afm_mcd(subset(raw, Phase == "Phase 2"), cal, vars,
-                        ucl = ucl$UCL)
+mon  <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
 plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
                    method_label = "AFM-MCD Control Chart - Phase 2")
 ```

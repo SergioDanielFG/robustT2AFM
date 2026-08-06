@@ -4,17 +4,26 @@
 \alias{hotelling_classical_monitor}
 \title{Monitor New Batches Using Classical Hotelling Calibration (Phase 2)}
 \usage{
-hotelling_classical_monitor(new_data, calibration, variables)
+hotelling_classical_monitor(
+  new_data,
+  calibration,
+  variables,
+  batch_col = "Batch"
+)
 }
 \arguments{
 \item{new_data}{A data frame containing the new batches to evaluate. Must
-contain a column named 'Batch' identifying each batch.}
+contain a column identifying each batch; see \code{batch_col}.}
 
 \item{calibration}{A list returned by \code{\link{hotelling_classical_calibrate}}
 containing mu_global and Sp from Phase 1 calibration.}
 
 \item{variables}{Character vector with the names of the process variables.
 Must match the variables used in the calibration.}
+
+\item{batch_col}{Character. Name of the column that identifies the batch in
+\code{new_data}. Default \code{"Batch"}. Only what is read is renamed:
+the returned data frame always calls its first column \code{Batch}.}
 }
 \value{
 A data frame with one row per batch and columns:
@@ -49,22 +58,14 @@ AFM-MCD counterpart addresses this limitation.
 \examples{
 # Classical Hotelling Phase 2 monitoring, shown side-by-side with the
 # UCL and the OOC flag a quality engineer would use in production.
-# Base configuration of Frutos-Galarza et al. (2026). With this seed the
-# classical chart flags 2 of the 10 off-target batches; the AFM-MCD chart
-# on the same data flags 8. Single-replication counts, not rates: the
+# On this data the classical chart flags 2 of the 10 off-target batches;
+# the AFM-MCD chart flags 8. Single-replication counts, not rates: the
 # paper's averaged figures are quoted in run_afm_mcd().
-sim  <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-  prop_ooc_F2 = 0.5, shift_ooc = 1.0, seed = 20260425
-)
+data(afm_phase1)
+data(afm_phase2)
 vars <- paste0("Var", 1:4)
-cal  <- hotelling_classical_calibrate(
-  subset(sim, Phase == "Phase 1"), vars
-)
-mon  <- hotelling_classical_monitor(
-  subset(sim, Phase == "Phase 2"), cal, vars
-)
+cal  <- hotelling_classical_calibrate(afm_phase1, vars)
+mon  <- hotelling_classical_monitor(afm_phase2, cal, vars)
 ucl        <- hotelling_classical_ucl(K = 30, I = 20, J = 4)$UCL
 mon$is_ooc <- mon$T2 > ucl
 mon

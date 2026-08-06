@@ -194,7 +194,7 @@ test_that("run_afm_mcd validates its inputs", {
   expect_error(run_afm_mcd("nope", p2, vars), "'phase1' must be a data frame")
   expect_error(run_afm_mcd(p1, "nope", vars), "'phase2' must be a data frame")
   expect_error(run_afm_mcd(p1[setdiff(names(p1), "Batch")], p2, vars),
-               "'phase1' must contain a column named 'Batch'")
+               "Column 'Batch' not found in 'phase1'")
   expect_error(run_afm_mcd(p1, p2, "Missing"), "not found in 'phase1'")
   expect_error(run_afm_mcd(p1, p2[setdiff(names(p2), "Var4")],
                            vars),

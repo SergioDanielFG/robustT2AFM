@@ -8,7 +8,7 @@
 #' dispersion. The global reference center is the average of the MCD batch centers.
 #'
 #' @param data A data frame containing Phase 1 process data. Must contain a column
-#'   named 'Batch' identifying each batch.
+#'   identifying each batch; see \code{batch_col}.
 #' @param variables Character vector with the names of the process variables.
 #' @param mcd_alpha Numeric in (0.60, 0.90). Proportion of observations retained
 #'   by MCD. Default 0.67 (breakdown point = 0.33), the value used in
@@ -18,6 +18,10 @@
 #'   (silent). Set it to \code{TRUE} when you want to check which batches
 #'   survived the minimum-size filter; the same information is always available
 #'   afterwards in \code{names(result$weights)}.
+#' @param batch_col Character. Name of the column that identifies the batch.
+#'   Default \code{"Batch"}. Your export will not necessarily use that name,
+#'   and nothing in the method requires it; only this package's own simulated
+#'   data does.
 #'
 #' @return A list containing:
 #' \describe{
@@ -81,42 +85,32 @@
 #' @export
 #'
 #' @examples
-#' # Typical quality-engineer workflow:
-#' # 1) Assemble Phase 1 historical batches into a data.frame with a
-#' #    "Batch" column and the J process variables. In practice this comes
-#' #    from read.csv() or your MES. Here we simulate the Phase 1 of the
-#' #    base configuration in Frutos-Galarza et al. (2026): 6 of the 30
-#' #    batches carry 4 outlying observations each, shifted 4 sigma, i.e.
-#' #    contamination the calibration must absorb without polluting the
-#' #    reference.
-#' sim <- simulate_batch_process(
-#'   K1 = 30, K2 = 0, I = 20, J = 4, rho = 0.6,
-#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-#'   seed = 20260425
-#' )
-#' phase1 <- subset(sim, Phase == "Phase 1")
-#' vars   <- paste0("Var", 1:4)
+#' # 30 historical batches, 6 of them carrying outlying observations.
+#' # In production this data frame comes from read.csv() or your MES.
+#' data(afm_phase1)
+#' cal <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4))
 #'
-#' # 2) Calibrate the AFM-weighted MCD reference.
-#' cal <- calibrate_afm_mcd(phase1, vars)
-#'
-#' # 3) Inspect the outputs a quality engineer cares about:
+#' # The outputs a quality engineer cares about:
 #' round(cal$mu_r, 3)               # robust reference center
 #' round(cal$Sw, 3)                 # AFM-weighted covariance
-#' round(sort(cal$weights), 4)      # smallest weights = most anomalous batches
+#' round(sort(cal$weights), 4)      # smallest weights = most dispersed batches
 #'
-#' # 4) If you want to see which batches were actually used, ask for it:
-#' cal_v <- calibrate_afm_mcd(phase1, vars, verbose = TRUE)
+#' # If your batch identifier is not called "Batch":
+#' lots <- afm_phase1
+#' names(lots)[names(lots) == "Batch"] <- "Lote"
+#' cal2 <- calibrate_afm_mcd(lots, paste0("Var", 1:4), batch_col = "Lote")
+#'
+#' # To see which batches were actually used, ask for it:
+#' cal_v <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4), verbose = TRUE)
 calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
-                              verbose = FALSE) {
+                              verbose = FALSE, batch_col = "Batch") {
 
   # --- Input validation ---
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.")
   }
-  if (!"Batch" %in% colnames(data)) {
-    stop("'data' must contain a column named 'Batch'.")
-  }
+  check_batch_col(data, batch_col, "data",
+                  "calibrate_afm_mcd(data, variables, batch_col = \"<name>\")")
   if (!all(variables %in% colnames(data))) {
     missing_vars <- setdiff(variables, colnames(data))
     stop("Variables not found in data: ", paste(missing_vars, collapse = ", "))
@@ -131,7 +125,8 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
   }
 
   # --- Setup ---
-  batches <- unique(data$Batch)
+  batch_id <- data[[batch_col]]
+  batches <- unique(batch_id)
   J <- length(variables)
 
   # --- MCD estimation per batch ---
@@ -140,7 +135,7 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
   batch_sizes <- integer(0)
 
   for (batch in batches) {
-    subset_batch <- data[data$Batch == batch, variables]
+    subset_batch <- data[batch_id == batch, variables]
     if (nrow(subset_batch) <= J) {
       warning("Batch '", batch, "' has too few observations (",
               nrow(subset_batch), " <= ", J, " variables). Skipping.")

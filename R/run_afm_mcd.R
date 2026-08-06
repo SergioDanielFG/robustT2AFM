@@ -9,9 +9,10 @@
 #' \code{\link{monitor_afm_mcd}} and \code{\link{plot_control_chart}}.
 #'
 #' @param phase1 A data frame of historical, in-control batches used for
-#'   calibration. Must contain a column named 'Batch'.
-#' @param phase2 A data frame of the new batches to monitor. Must contain a
-#'   column named 'Batch'.
+#'   calibration. Must contain a column identifying each batch; see
+#'   \code{batch_col}.
+#' @param phase2 A data frame of the new batches to monitor, with the same
+#'   batch column.
 #' @param variables Character vector with the names of the process variables.
 #'   Default \code{NULL} auto-detects every numeric column of \code{phase1}
 #'   other than 'Batch' and 'Phase', and reports the choice with a
@@ -34,6 +35,10 @@
 #'   exporting the figures. When supplied, four files are written:
 #'   \code{<stem>_control_chart.png/.pdf} and
 #'   \code{<stem>_afm_weights.png/.pdf}. Default \code{NULL} writes nothing.
+#' @param batch_col Character. Name of the column identifying the batch in
+#'   both phases. Default \code{"Batch"}, and propagated to every step. It is
+#'   also excluded from the automatic variable detection, together with
+#'   \code{"Phase"}.
 #' @param x An \code{afm_mcd_study} object (or, for the summary method, a
 #'   \code{summary.afm_mcd_study} object) to print.
 #' @param object An \code{afm_mcd_study} object to summarise.
@@ -101,36 +106,22 @@
 #' @export
 #'
 #' @examples
-#' # Base configuration of Frutos-Galarza et al. (2026): 6 of the 30 Phase 1
-#' # batches carry 4 outlying observations each (shifted 4 sigma), and half
-#' # the Phase 2 batches are off-target by 1 sigma.
-#' sim <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-#'   seed = 20260425
-#' )
-#'
-#' study <- run_afm_mcd(
-#'   phase1    = subset(sim, Phase == "Phase 1"),
-#'   phase2    = subset(sim, Phase == "Phase 2"),
-#'   variables = paste0("Var", 1:4),
-#'   plot      = FALSE
-#' )
+#' # The whole method in one call. The variables are detected automatically
+#' # because the four Var columns are the only numeric ones.
+#' data(afm_phase1)
+#' data(afm_phase2)
+#' study <- run_afm_mcd(afm_phase1, afm_phase2, plot = FALSE)
 #'
 #' study                      # the short answer
 #' summary(study)             # the full report
 #' study$monitoring           # the T2 of every Phase 2 batch
 #'
-#' # The same run with the classical chart alongside. With this seed the
+#' # The same run with the classical chart alongside. On this data the
 #' # proposed method flags 8 of the 10 off-target batches and the classical
 #' # chart flags 2, with no false alarm from either. One replication is not
 #' # a detection rate: see the section above before quoting these counts.
-#' summary(run_afm_mcd(
-#'   subset(sim, Phase == "Phase 1"), subset(sim, Phase == "Phase 2"),
-#'   variables = paste0("Var", 1:4), plot = FALSE,
-#'   compare_classical = TRUE
-#' ))
+#' summary(run_afm_mcd(afm_phase1, afm_phase2, plot = FALSE,
+#'                     compare_classical = TRUE))
 run_afm_mcd <- function(phase1,
                         phase2,
                         variables = NULL,
@@ -138,7 +129,8 @@ run_afm_mcd <- function(phase1,
                         alpha = 0.001,
                         plot = TRUE,
                         compare_classical = FALSE,
-                        save_path = NULL) {
+                        save_path = NULL,
+                        batch_col = "Batch") {
 
   this_call <- match.call()
 
@@ -149,12 +141,10 @@ run_afm_mcd <- function(phase1,
   if (!is.data.frame(phase2)) {
     stop("'phase2' must be a data frame of the batches to monitor.")
   }
-  if (!"Batch" %in% colnames(phase1)) {
-    stop("'phase1' must contain a column named 'Batch' identifying each batch.")
-  }
-  if (!"Batch" %in% colnames(phase2)) {
-    stop("'phase2' must contain a column named 'Batch' identifying each batch.")
-  }
+  check_batch_col(phase1, batch_col, "phase1",
+                  "run_afm_mcd(phase1, phase2, batch_col = \"<name>\")")
+  check_batch_col(phase2, batch_col, "phase2",
+                  "run_afm_mcd(phase1, phase2, batch_col = \"<name>\")")
   if (!is.logical(plot) || length(plot) != 1 || is.na(plot)) {
     stop("'plot' must be TRUE or FALSE.")
   }
@@ -171,7 +161,7 @@ run_afm_mcd <- function(phase1,
 
   # --- Variable selection ---
   if (is.null(variables)) {
-    candidates <- setdiff(colnames(phase1), c("Batch", "Phase"))
+    candidates <- setdiff(colnames(phase1), c(batch_col, "Phase"))
     variables <- candidates[vapply(phase1[candidates], is.numeric, logical(1))]
     if (length(variables) < 1) {
       stop("No numeric process variables found in 'phase1' besides 'Batch' ",
@@ -205,11 +195,12 @@ run_afm_mcd <- function(phase1,
   }
 
   # --- The four steps, in order, with nothing recomputed ---
-  calibration <- calibrate_afm_mcd(phase1, variables, mcd_alpha = mcd_alpha)
+  calibration <- calibrate_afm_mcd(phase1, variables, mcd_alpha = mcd_alpha,
+                                   batch_col = batch_col)
   limit       <- ucl_F_adjusted(calibration, I = calibration$I_phase1,
                                 alpha = alpha)
   monitoring  <- monitor_afm_mcd(phase2, calibration, variables,
-                                 ucl = limit$UCL)
+                                 ucl = limit$UCL, batch_col = batch_col)
 
   chart <- plot_control_chart(
     monitoring,
@@ -230,12 +221,14 @@ run_afm_mcd <- function(phase1,
   # --- Optional classical baseline on the same data ---
   classical <- NULL
   if (isTRUE(compare_classical)) {
-    cal_c <- hotelling_classical_calibrate(phase1, variables)
+    cal_c <- hotelling_classical_calibrate(phase1, variables,
+                                           batch_col = batch_col)
     ucl_c <- hotelling_classical_ucl(K = cal_c$n_batches,
                                      I = calibration$I_phase1,
                                      J = length(variables),
                                      alpha = alpha)
-    mon_c <- hotelling_classical_monitor(phase2, cal_c, variables)
+    mon_c <- hotelling_classical_monitor(phase2, cal_c, variables,
+                                         batch_col = batch_col)
     mon_c$is_ooc <- mon_c$T2 > ucl_c$UCL
     classical <- list(calibration = cal_c, ucl = ucl_c, monitoring = mon_c)
   }

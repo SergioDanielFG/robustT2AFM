@@ -41,13 +41,10 @@
 #' @examples
 #' # Full pipeline: calibrate Phase 1, compute the operational UCL,
 #' # monitor Phase 2, and count out-of-control batches.
-#' sim    <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0, seed = 20260425
-#' )
-#' vars   <- paste0("Var", 1:4)
-#' cal    <- calibrate_afm_mcd(subset(sim, Phase == "Phase 1"), vars)
+#' data(afm_phase1)
+#' data(afm_phase2)
+#' vars <- paste0("Var", 1:4)
+#' cal  <- calibrate_afm_mcd(afm_phase1, vars)
 #'
 #' # F-adjusted UCL (operational default in Frutos-Galarza et al. 2026).
 #' ucl <- ucl_F_adjusted(cal, I = 20)
@@ -57,8 +54,7 @@
 #'
 #' # Apply against Phase 2: pass the limit to monitor_afm_mcd() and it
 #' # flags the out-of-control batches for you.
-#' mon <- monitor_afm_mcd(subset(sim, Phase == "Phase 2"), cal, vars,
-#'                        ucl = ucl$UCL)
+#' mon <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
 #' sum(mon$is_ooc)                          # number of alarms
 ucl_F_adjusted <- function(calibration, I, alpha = 0.001) {
 

@@ -11,8 +11,10 @@
 #' the Monte Carlo comparisons reported in the paper.
 #'
 #' @param data A data frame containing Phase 1 process data. Must contain a
-#'   column named 'Batch' identifying each batch.
+#'   column identifying each batch; see \code{batch_col}.
 #' @param variables Character vector with the names of the process variables.
+#' @param batch_col Character. Name of the column that identifies the batch.
+#'   Default \code{"Batch"}.
 #'
 #' @return A list containing:
 #' \describe{
@@ -55,28 +57,28 @@
 #'
 #' @examples
 #' # Classical Hotelling calibration on the same Phase 1 used by the
-#' # AFM-MCD method, provided as a benchmark. Phase 1 is intentionally
-#' # clean here (the classical estimator is not designed to absorb
-#' # outliers or shifted batches; see calibrate_afm_mcd for the robust
-#' # counterpart).
-#' sim    <- simulate_batch_process(
-#'   K1 = 30, K2 = 0, I = 20, J = 4, seed = 20260417
-#' )
-#' phase1 <- subset(sim, Phase == "Phase 1")
-#' vars   <- paste0("Var", 1:4)
+#' # AFM-MCD method, provided as a benchmark. Note that this Phase 1 is
+#' # contaminated: 6 of its 30 batches carry outlying observations, which
+#' # the classical estimator absorbs into Sp instead of trimming. Compare
+#' # the determinant of Sp below with that of the Sw returned by
+#' # calibrate_afm_mcd on the same data.
+#' data(afm_phase1)
+#' vars <- paste0("Var", 1:4)
 #'
-#' cal <- hotelling_classical_calibrate(phase1, vars)
+#' cal <- hotelling_classical_calibrate(afm_phase1, vars)
 #' round(cal$mu_global, 3)
 #' round(cal$Sp, 3)
-hotelling_classical_calibrate <- function(data, variables) {
+hotelling_classical_calibrate <- function(data, variables,
+                                          batch_col = "Batch") {
 
   # --- Input validation ---
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.")
   }
-  if (!"Batch" %in% colnames(data)) {
-    stop("'data' must contain a column named 'Batch'.")
-  }
+  check_batch_col(
+    data, batch_col, "data",
+    "hotelling_classical_calibrate(data, variables, batch_col = \"<name>\")"
+  )
   if (!is.character(variables) || length(variables) < 1) {
     stop("'variables' must be a non-empty character vector.")
   }
@@ -91,7 +93,8 @@ hotelling_classical_calibrate <- function(data, variables) {
   }
 
   # --- Setup ---
-  batches <- unique(data$Batch)
+  batch_id <- data[[batch_col]]
+  batches <- unique(batch_id)
   K <- length(batches)
   J <- length(variables)
 
@@ -107,7 +110,7 @@ hotelling_classical_calibrate <- function(data, variables) {
   batch_sizes <- integer(K)
 
   for (k in seq_len(K)) {
-    subset_batch <- data[data$Batch == batches[k], variables, drop = FALSE]
+    subset_batch <- data[batch_id == batches[k], variables, drop = FALSE]
     I_k <- nrow(subset_batch)
     if (I_k < 2) {
       stop("Batch '", batches[k],
@@ -168,11 +171,14 @@ hotelling_classical_calibrate <- function(data, variables) {
 #' from \code{\link{hotelling_classical_ucl}} to identify out-of-control batches.
 #'
 #' @param new_data A data frame containing the new batches to evaluate. Must
-#'   contain a column named 'Batch' identifying each batch.
+#'   contain a column identifying each batch; see \code{batch_col}.
 #' @param calibration A list returned by \code{\link{hotelling_classical_calibrate}}
 #'   containing mu_global and Sp from Phase 1 calibration.
 #' @param variables Character vector with the names of the process variables.
 #'   Must match the variables used in the calibration.
+#' @param batch_col Character. Name of the column that identifies the batch in
+#'   \code{new_data}. Default \code{"Batch"}. Only what is read is renamed:
+#'   the returned data frame always calls its first column \code{Batch}.
 #'
 #' @return A data frame with one row per batch and columns:
 #' \describe{
@@ -208,34 +214,29 @@ hotelling_classical_calibrate <- function(data, variables) {
 #' @examples
 #' # Classical Hotelling Phase 2 monitoring, shown side-by-side with the
 #' # UCL and the OOC flag a quality engineer would use in production.
-#' # Base configuration of Frutos-Galarza et al. (2026). With this seed the
-#' # classical chart flags 2 of the 10 off-target batches; the AFM-MCD chart
-#' # on the same data flags 8. Single-replication counts, not rates: the
+#' # On this data the classical chart flags 2 of the 10 off-target batches;
+#' # the AFM-MCD chart flags 8. Single-replication counts, not rates: the
 #' # paper's averaged figures are quoted in run_afm_mcd().
-#' sim  <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0, seed = 20260425
-#' )
+#' data(afm_phase1)
+#' data(afm_phase2)
 #' vars <- paste0("Var", 1:4)
-#' cal  <- hotelling_classical_calibrate(
-#'   subset(sim, Phase == "Phase 1"), vars
-#' )
-#' mon  <- hotelling_classical_monitor(
-#'   subset(sim, Phase == "Phase 2"), cal, vars
-#' )
+#' cal  <- hotelling_classical_calibrate(afm_phase1, vars)
+#' mon  <- hotelling_classical_monitor(afm_phase2, cal, vars)
 #' ucl        <- hotelling_classical_ucl(K = 30, I = 20, J = 4)$UCL
 #' mon$is_ooc <- mon$T2 > ucl
 #' mon
-hotelling_classical_monitor <- function(new_data, calibration, variables) {
+hotelling_classical_monitor <- function(new_data, calibration, variables,
+                                        batch_col = "Batch") {
 
   # --- Input validation ---
   if (!is.data.frame(new_data)) {
     stop("'new_data' must be a data frame.")
   }
-  if (!"Batch" %in% colnames(new_data)) {
-    stop("'new_data' must contain a column named 'Batch'.")
-  }
+  check_batch_col(
+    new_data, batch_col, "new_data",
+    paste0("hotelling_classical_monitor(new_data, calibration, variables, ",
+           "batch_col = \"<name>\")")
+  )
   if (!is.list(calibration) || !all(c("mu_global", "Sp") %in% names(calibration))) {
     stop("'calibration' must be a list from hotelling_classical_calibrate() ",
          "containing 'mu_global' and 'Sp'.")
@@ -258,7 +259,8 @@ hotelling_classical_monitor <- function(new_data, calibration, variables) {
            conditionMessage(e))
     }
   )
-  batches <- unique(new_data$Batch)
+  batch_id <- new_data[[batch_col]]
+  batches <- unique(batch_id)
 
   # --- Compute T-squared per batch ---
   results <- data.frame(
@@ -269,7 +271,7 @@ hotelling_classical_monitor <- function(new_data, calibration, variables) {
   )
 
   for (batch in batches) {
-    subset_batch <- new_data[new_data$Batch == batch, variables, drop = FALSE]
+    subset_batch <- new_data[batch_id == batch, variables, drop = FALSE]
     I <- nrow(subset_batch)
 
     if (I < 1) {

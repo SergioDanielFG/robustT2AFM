@@ -70,14 +70,8 @@ used in Frutos-Galarza et al. (2026). Sorting by weight already discards
 the run order, so nothing is lost by transposing the axes.
 }
 \examples{
-# Phase 1 of the base configuration in Frutos-Galarza et al. (2026):
-# 6 of the 30 batches carry 4 outlying observations each.
-sim <- simulate_batch_process(
-  K1 = 30, K2 = 0, I = 20, J = 4, rho = 0.6,
-  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-  seed = 20260425
-)
-cal <- calibrate_afm_mcd(subset(sim, Phase == "Phase 1"), paste0("Var", 1:4))
+data(afm_phase1)
+cal <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4))
 
 # Every bar neutral; the dashed line is the uniform weight 1/K.
 plot_afm_weights(cal)

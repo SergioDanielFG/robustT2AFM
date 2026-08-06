@@ -36,6 +36,8 @@ Description: Implements a robust Hotelling T-squared control chart for batch
     Van Driessen (1999) <doi:10.1080/00401706.1999.10485670>.
 License: MIT + file LICENSE
 Encoding: UTF-8
+LazyData: true
+LazyDataCompression: xz
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends:

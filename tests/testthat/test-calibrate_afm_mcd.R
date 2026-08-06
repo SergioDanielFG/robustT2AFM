@@ -113,7 +113,7 @@ test_that("calibrate_afm_mcd validates its inputs", {
   expect_error(calibrate_afm_mcd("not a df", c("Var1", "Var2")),
                "must be a data frame")
   expect_error(calibrate_afm_mcd(data.frame(Var1 = 1), "Var1"),
-               "must contain a column named 'Batch'")
+               "Column 'Batch' not found in 'data'")
   expect_error(calibrate_afm_mcd(df, "Missing"), "not found in data")
   expect_error(calibrate_afm_mcd(df, c("Var1", "Var2"), mcd_alpha = 0.5),
                "mcd_alpha must be")

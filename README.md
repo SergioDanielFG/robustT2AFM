@@ -25,28 +25,30 @@ T-squared suffers from masking effects.
 ```r
 library(robustT2AFM)
 
-# 1. Historical data with a "Batch" column and J numeric variables.
-#    Base configuration of the paper: 6 of the 30 Phase 1 batches carry
-#    4 outlying observations each, and half the Phase 2 batches are
-#    off-target by 1 sigma.
-sim    <- simulate_batch_process(K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-                                 outlier_batches_F1 = 6, outlier_rate = 0.20,
-                                 outlier_shift = 4,
-                                 prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-                                 seed = 20260425)
-vars   <- paste0("Var", 1:4)
+# The base configuration of the paper ships with the package: 6 of the
+# 30 Phase 1 batches carry outlying observations, and half the Phase 2
+# batches are off-target by 1 sigma.
+data(afm_phase1)
+data(afm_phase2)
 
-# 2. Calibrate Phase 1.
-cal    <- calibrate_afm_mcd(subset(sim, Phase == "Phase 1"), vars)
+# The whole study in one call.
+study <- run_afm_mcd(afm_phase1, afm_phase2)
+study            # how many batches are out of control, and which
+summary(study)   # the full report
 
-# 3. Compute the operational UCL.
-ucl    <- ucl_F_adjusted(cal, I = 20)
-
-# 4. Monitor Phase 2 and plot the control chart.
-mon    <- monitor_afm_mcd(subset(sim, Phase == "Phase 2"), cal, vars)
+# Or the four steps separately.
+vars <- paste0("Var", 1:4)
+cal  <- calibrate_afm_mcd(afm_phase1, vars)
+ucl  <- ucl_F_adjusted(cal, I = 20)
+mon  <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
 plot_control_chart(mon, UCL = ucl$UCL,
                    method_label = "AFM-MCD Control Chart - Phase 2",
                    alpha = ucl$parameters$alpha)
+
+# If your batch column is not called "Batch":
+#   calibrate_afm_mcd(my_data, vars, batch_col = "Lote")
+
+# Use simulate_batch_process() to build other scenarios.
 ```
 
 ## Installation

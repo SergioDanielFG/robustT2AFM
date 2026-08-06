@@ -15,7 +15,8 @@ run_afm_mcd(
   alpha = 0.001,
   plot = TRUE,
   compare_classical = FALSE,
-  save_path = NULL
+  save_path = NULL,
+  batch_col = "Batch"
 )
 
 \method{print}{afm_mcd_study}(x, ...)
@@ -26,10 +27,11 @@ run_afm_mcd(
 }
 \arguments{
 \item{phase1}{A data frame of historical, in-control batches used for
-calibration. Must contain a column named 'Batch'.}
+calibration. Must contain a column identifying each batch; see
+\code{batch_col}.}
 
-\item{phase2}{A data frame of the new batches to monitor. Must contain a
-column named 'Batch'.}
+\item{phase2}{A data frame of the new batches to monitor, with the same
+batch column.}
 
 \item{variables}{Character vector with the names of the process variables.
 Default \code{NULL} auto-detects every numeric column of \code{phase1}
@@ -58,6 +60,11 @@ alongside in \code{summary()}. Default \code{FALSE}.}
 exporting the figures. When supplied, four files are written:
 \code{<stem>_control_chart.png/.pdf} and
 \code{<stem>_afm_weights.png/.pdf}. Default \code{NULL} writes nothing.}
+
+\item{batch_col}{Character. Name of the column identifying the batch in
+both phases. Default \code{"Batch"}, and propagated to every step. It is
+also excluded from the automatic variable detection, together with
+\code{"Phase"}.}
 
 \item{x}{An \code{afm_mcd_study} object (or, for the summary method, a
 \code{summary.afm_mcd_study} object) to print.}
@@ -132,36 +139,22 @@ alarm behaviour.
 }
 
 \examples{
-# Base configuration of Frutos-Galarza et al. (2026): 6 of the 30 Phase 1
-# batches carry 4 outlying observations each (shifted 4 sigma), and half
-# the Phase 2 batches are off-target by 1 sigma.
-sim <- simulate_batch_process(
-  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-  seed = 20260425
-)
-
-study <- run_afm_mcd(
-  phase1    = subset(sim, Phase == "Phase 1"),
-  phase2    = subset(sim, Phase == "Phase 2"),
-  variables = paste0("Var", 1:4),
-  plot      = FALSE
-)
+# The whole method in one call. The variables are detected automatically
+# because the four Var columns are the only numeric ones.
+data(afm_phase1)
+data(afm_phase2)
+study <- run_afm_mcd(afm_phase1, afm_phase2, plot = FALSE)
 
 study                      # the short answer
 summary(study)             # the full report
 study$monitoring           # the T2 of every Phase 2 batch
 
-# The same run with the classical chart alongside. With this seed the
+# The same run with the classical chart alongside. On this data the
 # proposed method flags 8 of the 10 off-target batches and the classical
 # chart flags 2, with no false alarm from either. One replication is not
 # a detection rate: see the section above before quoting these counts.
-summary(run_afm_mcd(
-  subset(sim, Phase == "Phase 1"), subset(sim, Phase == "Phase 2"),
-  variables = paste0("Var", 1:4), plot = FALSE,
-  compare_classical = TRUE
-))
+summary(run_afm_mcd(afm_phase1, afm_phase2, plot = FALSE,
+                    compare_classical = TRUE))
 }
 \references{
 Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &

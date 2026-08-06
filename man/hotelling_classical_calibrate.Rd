@@ -4,13 +4,16 @@
 \alias{hotelling_classical_calibrate}
 \title{Phase 1 Calibration of the Classical Hotelling T-squared Control Chart}
 \usage{
-hotelling_classical_calibrate(data, variables)
+hotelling_classical_calibrate(data, variables, batch_col = "Batch")
 }
 \arguments{
 \item{data}{A data frame containing Phase 1 process data. Must contain a
-column named 'Batch' identifying each batch.}
+column identifying each batch; see \code{batch_col}.}
 
 \item{variables}{Character vector with the names of the process variables.}
+
+\item{batch_col}{Character. Name of the column that identifies the batch.
+Default \code{"Batch"}.}
 }
 \value{
 A list containing:
@@ -50,17 +53,15 @@ J = number of variables (p in Montgomery), K = number of preliminary batches
 }
 \examples{
 # Classical Hotelling calibration on the same Phase 1 used by the
-# AFM-MCD method, provided as a benchmark. Phase 1 is intentionally
-# clean here (the classical estimator is not designed to absorb
-# outliers or shifted batches; see calibrate_afm_mcd for the robust
-# counterpart).
-sim    <- simulate_batch_process(
-  K1 = 30, K2 = 0, I = 20, J = 4, seed = 20260417
-)
-phase1 <- subset(sim, Phase == "Phase 1")
-vars   <- paste0("Var", 1:4)
+# AFM-MCD method, provided as a benchmark. Note that this Phase 1 is
+# contaminated: 6 of its 30 batches carry outlying observations, which
+# the classical estimator absorbs into Sp instead of trimming. Compare
+# the determinant of Sp below with that of the Sw returned by
+# calibrate_afm_mcd on the same data.
+data(afm_phase1)
+vars <- paste0("Var", 1:4)
 
-cal <- hotelling_classical_calibrate(phase1, vars)
+cal <- hotelling_classical_calibrate(afm_phase1, vars)
 round(cal$mu_global, 3)
 round(cal$Sp, 3)
 }

@@ -104,34 +104,31 @@
 #' @export
 #'
 #' @examples
-#' # Base configuration of Frutos-Galarza et al. (2026).
-#' sim <- simulate_batch_process(
-#'   K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
-#'   outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
-#'   prop_ooc_F2 = 0.5, shift_ooc = 1.0,
-#'   seed = 20260425
-#' )
-#' p1   <- subset(sim, Phase == "Phase 1")
-#' p2   <- subset(sim, Phase == "Phase 2")
+#' data(afm_phase1)
+#' data(afm_phase2)
 #' vars <- paste0("Var", 1:4)
 #'
 #' # Form 1: from a study that already carries the classical baseline.
-#' study <- run_afm_mcd(p1, p2, vars, plot = FALSE, compare_classical = TRUE)
+#' study <- run_afm_mcd(afm_phase1, afm_phase2, vars, plot = FALSE,
+#'                      compare_classical = TRUE)
 #' plot_method_comparison(study)
 #'
 #' # Form 2: from the pieces, which is how the paper's own scripts chain.
-#' cal   <- calibrate_afm_mcd(p1, vars)
+#' cal   <- calibrate_afm_mcd(afm_phase1, vars)
 #' ucl   <- ucl_F_adjusted(cal, I = 20)
-#' mon   <- monitor_afm_mcd(p2, cal, vars, ucl = ucl$UCL)
-#' cal_c <- hotelling_classical_calibrate(p1, vars)
+#' mon   <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
+#' cal_c <- hotelling_classical_calibrate(afm_phase1, vars)
 #' ucl_c <- hotelling_classical_ucl(K = 30, I = 20, J = 4)
-#' mon_c <- hotelling_classical_monitor(p2, cal_c, vars)
+#' mon_c <- hotelling_classical_monitor(afm_phase2, cal_c, vars)
 #'
 #' plot_method_comparison(mon, mon_c, ucl$UCL, ucl_c$UCL)
 #'
-#' # In a simulation the faulty batches are known, so the points can be
-#' # coloured by truth: faulty batches sitting below a limit that never fired.
-#' truth <- as.character(unique(p2$Batch[p2$Status == "Out of Control"]))
+#' # These are simulated data, so the faulty batches are known and the
+#' # points can be coloured by truth: faulty batches sitting below a limit
+#' # that never fired. Real monitoring data carries no such column.
+#' truth <- as.character(unique(
+#'   afm_phase2$Batch[afm_phase2$Status == "Out of Control"]
+#' ))
 #' plot_method_comparison(study, faulty = truth)
 #'
 #' # Everything the bare figure leaves out, for a closer look.
