@@ -64,6 +64,14 @@ reference line is drawn so the spread can be judged against it; the
 colouring is left to \code{highlight_lowest}, which the caller sets
 deliberately.
 
+\strong{On the colour of the reference line.} It is slate here, not the
+burgundy used for the limit line in \code{\link{plot_control_chart}} and
+\code{\link{plot_method_comparison}}, and the difference is deliberate.
+There the line is a limit: crossing it raises an alarm. Here 1/K is not a
+limit, and crossing it means nothing at all - see the paragraph above on
+why more than half the batches fall below it even when Phase 1 is clean.
+Burgundy would imply a threshold that does not exist.
+
 The batch identifiers are placed on the y axis rather than the x axis so
 that they stay horizontal and legible with the K = 30 calibration batches
 used in Frutos-Galarza et al. (2026). Sorting by weight already discards

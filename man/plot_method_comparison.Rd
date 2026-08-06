@@ -15,6 +15,7 @@ plot_method_comparison(
   near_miss = NULL,
   scale = c("ratio", "T2"),
   labels = c("AFM-MCD (robust)", "Classical Hotelling"),
+  title = "Same Phase 2 batches, two methods",
   save_path = NULL
 )
 }
@@ -63,6 +64,11 @@ independent vertical scales. See Details.}
 \item{labels}{Character vector of length 2 with the panel titles. Default
 \code{c("AFM-MCD (robust)", "Classical Hotelling")}.}
 
+\item{title}{Character. Title of the whole figure, or \code{NULL} for none.
+Default "Same Phase 2 batches, two methods". A figure exported to PNG or
+PDF and pasted into a report carries no journal caption, so it has to say
+what it is on its own.}
+
 \item{save_path}{Optional character. Path stem (without extension) for
 export as PNG (300 dpi) and PDF. Default \code{NULL} writes nothing.}
 }
@@ -86,9 +92,14 @@ deliberately not printed under it: a caption nobody reads is worse than no
 caption, because the lines that do matter get skipped with it.
 
 \strong{Colouring by truth versus by verdict.} With \code{faulty} the points
-are coloured "In-control batch" and "Faulty batch", and the reader sees
-faulty batches sitting below a limit that never fired. Without it the
-colours can only show each chart's own verdict, "Signalled" and "No signal".
+are coloured "Faulty batch" and "Fault-free batch" under a legend titled
+"Batch condition", and the reader sees faulty batches sitting below a limit
+that never fired. Without it the colours can only show each chart's own
+verdict, "Out of control" and "In control", under a legend titled "Chart
+verdict". The two pairs share no word and never appear together, and the
+legend title names which of the two the colours encode: a reader looking at
+this figure next to \code{\link{plot_control_chart}} should never have to
+wonder whether the same colour means the same thing.
 Which batches are genuinely faulty is knowable in a simulation, because we
 generate it, and in a labelled benchmark such as Tennessee Eastman, because
 the data carries it. It is never knowable on a plant floor: that is the very
@@ -144,7 +155,7 @@ plot_method_comparison(mon, mon_c, ucl$UCL, ucl_c$UCL)
 # points can be coloured by truth: faulty batches sitting below a limit
 # that never fired. Real monitoring data carries no such column.
 truth <- as.character(unique(
-  afm_phase2$Batch[afm_phase2$Status == "Out of Control"]
+  afm_phase2$Batch[afm_phase2$Status == "Faulty"]
 ))
 plot_method_comparison(study, faulty = truth)
 

@@ -20,8 +20,9 @@
 #' \describe{
 #'   \item{Batch}{Factor, batch identifier (\code{F1_B01} to \code{F1_B30}).}
 #'   \item{Phase}{Factor, always "Phase 1" here.}
-#'   \item{Status}{Factor, "Under Control" or "Out of Control". Ground truth,
-#'         see the warning above.}
+#'   \item{Status}{Factor, "Fault-free" or "Faulty". Ground truth, see the
+#'         warning above. It says what the batch \emph{is}, not what a chart
+#'         decided about it, which is why it does not read "out of control".}
 #'   \item{ContaminationType}{Factor, "Clean" or "Outliers". Ground truth,
 #'         see the warning above.}
 #'   \item{Var1, Var2, Var3, Var4}{Numeric process variables, equicorrelated
@@ -81,10 +82,12 @@
 #' \describe{
 #'   \item{Batch}{Factor, batch identifier (\code{F2_B01} to \code{F2_B20}).}
 #'   \item{Phase}{Factor, always "Phase 2" here.}
-#'   \item{Status}{Factor, "Under Control" or "Out of Control". Ground truth,
-#'         see the warning above.}
-#'   \item{ContaminationType}{Factor, "Clean" or "OOC". Ground truth, see the
-#'         warning above.}
+#'   \item{Status}{Factor, "Fault-free" or "Faulty". Ground truth, see the
+#'         warning above. It says what the batch \emph{is}, not what a chart
+#'         decided about it, which is why it does not read "out of control".}
+#'   \item{ContaminationType}{Factor, "Clean" or "Shifted". Ground truth, see
+#'         the warning above. "Shifted" is the same label Phase 1 uses for a
+#'         wholly displaced batch, because it is the same mechanism.}
 #'   \item{Var1, Var2, Var3, Var4}{Numeric process variables.}
 #' }
 #'
@@ -98,9 +101,13 @@
 #' To extract the ground truth for \code{plot_method_comparison}:
 #' \preformatted{
 #' faulty <- as.character(unique(
-#'   afm_phase2$Batch[afm_phase2$Status == "Out of Control"]
+#'   afm_phase2$Batch[afm_phase2$Status == "Faulty"]
 #' ))
 #' }
+#' The filter and the argument now speak the same language. They did not
+#' always: \code{Status} used to read "Out of Control", so the example built
+#' an argument called \code{faulty} by filtering on a label that named a
+#' chart's verdict. It taught the confusion the figures are designed to avoid.
 #'
 #' @source
 #' Same call as \code{\link{afm_phase1}}; see that help page and

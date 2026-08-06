@@ -28,8 +28,11 @@ Description: Implements a robust Hotelling T-squared control chart for batch
     T-squared implementation as a baseline for comparison, a control chart
     that labels the out-of-control batches for reporting, a plot of the
     Phase I batch weights against the uniform weight that shows which
-    calibration batches carry the most internal dispersion, and a generator
-    of contaminated batch data for simulation studies. The method and its
+    calibration batches carry the most internal dispersion, a two-panel
+    figure contrasting the robust and classical charts on the same batches,
+    and a generator of contaminated batch data for simulation studies. A
+    single entry point chains calibration, limit, monitoring and chart, and
+    two simulated data sets let the examples run as they stand. The method and its
     calibration are described in Frutos-Galarza et al. (2026); the weighting
     scheme follows Abdi, Williams and Valentin (2013)
     <doi:10.1002/wics.1246> and the robust estimator follows Rousseeuw and

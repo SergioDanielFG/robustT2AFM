@@ -114,7 +114,11 @@ test_that("calibrate_afm_mcd validates its inputs", {
                "must be a data frame")
   expect_error(calibrate_afm_mcd(data.frame(Var1 = 1), "Var1"),
                "Column 'Batch' not found in 'data'")
-  expect_error(calibrate_afm_mcd(df, "Missing"), "not found in data")
+  # The "not found" error lists what is there, like its batch_col sibling.
+  expect_error(calibrate_afm_mcd(df, "Missing"),
+               "Variable\\(s\\) not found in 'data': Missing")
+  expect_error(calibrate_afm_mcd(df, "Missing"),
+               "numeric columns available are: Var1, Var2")
   expect_error(calibrate_afm_mcd(df, c("Var1", "Var2"), mcd_alpha = 0.5),
                "mcd_alpha must be")
   expect_error(calibrate_afm_mcd(df, c("Var1", "Var2"), verbose = "yes"),

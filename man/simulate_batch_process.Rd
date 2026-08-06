@@ -63,8 +63,22 @@ Default 2.}
 }
 \value{
 Data frame with columns Batch, Phase, Status, ContaminationType,
-and Var1..VarJ. ContaminationType describes each batch: "Clean",
-"Outliers", "Shifted", or "OOC".
+and Var1..VarJ. \code{Status} is "Faulty" or "Fault-free" and
+\code{ContaminationType} says how a batch was spoiled: "Clean",
+"Outliers" or "Shifted". A wholly shifted batch is labelled "Shifted" in
+both phases, because it is the same mechanism: the mean is displaced and
+the covariance left alone. What differs is the role, contamination to be
+absorbed in Phase 1 and a signal to be detected in Phase 2, and the
+\code{Phase} column already says which.
+
+Both columns are \strong{ground truth}, available only because the data
+was generated on purpose, and they use the vocabulary of truth rather
+than the vocabulary of the chart's verdict: a batch is "Faulty", it is
+not "out of control", because being out of control is what a chart
+decides and not what a batch is. Real process data carries neither
+column. Their intended use is to supply the \code{faulty} argument of
+\code{\link{plot_method_comparison}} and to score detections in a
+simulation study.
 }
 \description{
 Generates synthetic batch process data with configurable contamination:

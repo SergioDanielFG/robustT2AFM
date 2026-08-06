@@ -93,10 +93,8 @@ monitor_afm_mcd <- function(new_data, calibration, variables, ucl = NULL,
     stop("'calibration' must be a list from calibrate_afm_mcd() ",
          "containing 'mu_r' and 'Sw'.")
   }
-  if (!all(variables %in% colnames(new_data))) {
-    missing_vars <- setdiff(variables, colnames(new_data))
-    stop("Variables not found in new_data: ", paste(missing_vars, collapse = ", "))
-  }
+  check_variables(new_data, variables, "new_data",
+                  "monitor_afm_mcd(new_data, calibration, variables)")
   if (length(variables) != length(calibration$mu_r)) {
     stop("Number of variables (", length(variables), ") does not match ",
          "calibration mu_r dimension (", length(calibration$mu_r), ").")

@@ -39,8 +39,23 @@ test_that("the shipped data sets have the shape the documentation promises", {
   # 6 contaminated Phase 1 batches, 10 off-target Phase 2 batches.
   contam <- unique(afm_phase1$Batch[afm_phase1$ContaminationType == "Outliers"])
   expect_length(contam, 6L)
-  ooc <- unique(afm_phase2$Batch[afm_phase2$Status == "Out of Control"])
+  ooc <- unique(afm_phase2$Batch[afm_phase2$Status == "Faulty"])
   expect_length(ooc, 10L)
+})
+
+test_that("the ground-truth columns use the vocabulary of truth", {
+  # Status says what a batch IS. "Out of control" is what a chart DECIDES,
+  # and it must not appear here: the column exists to build the 'faulty'
+  # argument of plot_method_comparison, and the two have to agree.
+  for (d in list(afm_phase1, afm_phase2)) {
+    expect_equal(levels(d$Status), c("Fault-free", "Faulty"))
+    expect_false(any(grepl("control", levels(d$Status), ignore.case = TRUE)))
+    # "OOC" was the same jargon one level down, and it named in Phase 2 the
+    # mechanism Phase 1 already called "Shifted".
+    expect_false("OOC" %in% levels(d$ContaminationType))
+  }
+  expect_equal(levels(afm_phase1$ContaminationType), c("Clean", "Outliers"))
+  expect_equal(levels(afm_phase2$ContaminationType), c("Clean", "Shifted"))
 })
 
 test_that("the ground-truth columns cannot be mistaken for process variables", {

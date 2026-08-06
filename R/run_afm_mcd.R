@@ -178,20 +178,14 @@ run_afm_mcd <- function(phase1,
             "if they were measurements, producing plausible but wrong ",
             "results. Pass 'variables' explicitly to choose them yourself.")
   }
-  if (!is.character(variables) || length(variables) < 1) {
-    stop("'variables' must be a non-empty character vector of column names, ",
-         "or NULL to auto-detect them.")
-  }
-  missing_p1 <- setdiff(variables, colnames(phase1))
-  if (length(missing_p1) > 0) {
-    stop("Variables not found in 'phase1': ",
-         paste(missing_p1, collapse = ", "), ".")
-  }
+  check_variables(phase1, variables, "phase1",
+                  "run_afm_mcd(phase1, phase2, variables), or NULL to detect them")
   missing_p2 <- setdiff(variables, colnames(phase2))
   if (length(missing_p2) > 0) {
-    stop("Variables not found in 'phase2': ",
+    stop("Variable(s) not found in 'phase2': ",
          paste(missing_p2, collapse = ", "),
-         ". Phase 1 and Phase 2 must carry the same process variables.")
+         ". They are present in 'phase1', so the two data frames do not carry ",
+         "the same process variables. Check the Phase 2 export.")
   }
 
   # --- The four steps, in order, with nothing recomputed ---
@@ -287,7 +281,9 @@ print.afm_mcd_study <- function(x, ...) {
         if (length(ooc_names) > length(shown)) {
           paste0(", ... and ", length(ooc_names) - length(shown), " more")
         } else "", "\n", sep = "")
-    cat(sprintf("  Highest: %s, T2 = %.2f (%.1fx the limit)\n",
+    # Dos decimales, como la columna "x limit" del summary: es el mismo
+    # cociente y no puede salir con distinta precision en dos sitios.
+    cat(sprintf("  Highest: %s, T2 = %.2f (%.2fx the limit)\n",
                 mon$Batch[top], mon$T2[top], mon$T2[top] / x$ucl$UCL))
   }
 

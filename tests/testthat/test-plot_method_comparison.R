@@ -96,15 +96,23 @@ test_that("diagnostics adds guides, rings and counts, and nothing else does", {
 test_that("colour follows truth when truth is supplied, verdict otherwise", {
   pz <- make_pieces()
 
-  # No faulty: colours are the chart's own verdict.
+  # No faulty: colours are the chart's own verdict, and the legend says so.
   p_dec <- plot_method_comparison(pz$mon_r, pz$mon_c, pz$ucl_r, pz$ucl_c)
-  expect_equal(levels(points_layer(p_dec)$Status), c("No signal", "Signalled"))
+  expect_equal(levels(points_layer(p_dec)$Status),
+               c("In control", "Out of control"))
+  expect_equal(p_dec$scales$get_scales("colour")$name, "Chart verdict")
 
   # With faulty: colours are ground truth, as in Figure 6 of the paper.
   p_tru <- plot_method_comparison(pz$mon_r, pz$mon_c, pz$ucl_r, pz$ucl_c,
                                   faulty = c("B3", "B5"))
   d <- points_layer(p_tru)
-  expect_equal(levels(d$Status), c("In-control batch", "Faulty batch"))
+  expect_equal(levels(d$Status), c("Fault-free batch", "Faulty batch"))
+  expect_equal(p_tru$scales$get_scales("colour")$name, "Batch condition")
+
+  # The two vocabularies share no discriminating word.
+  expect_false(any(grepl("control", levels(d$Status), ignore.case = TRUE)))
+  expect_false(any(grepl("fault", levels(points_layer(p_dec)$Status),
+                         ignore.case = TRUE)))
   expect_setequal(unique(d$Batch[d$Status == "Faulty batch"]), c("B3", "B5"))
   # B5 is faulty and the robust panel does not signal it: red below the line.
   robust_B5 <- d[d$Method == "AFM-MCD (robust)" & d$Batch == "B5", ]
@@ -115,7 +123,7 @@ test_that("colour follows truth when truth is supplied, verdict otherwise", {
   p_forced <- plot_method_comparison(pz$mon_r, pz$mon_c, pz$ucl_r, pz$ucl_c,
                                      faulty = c("B3"), colour_by = "decision")
   expect_equal(levels(points_layer(p_forced)$Status),
-               c("No signal", "Signalled"))
+               c("In control", "Out of control"))
 
   # Asking for truth without truth is refused, with the reason.
   expect_error(plot_method_comparison(pz$mon_r, pz$mon_c, pz$ucl_r, pz$ucl_c,

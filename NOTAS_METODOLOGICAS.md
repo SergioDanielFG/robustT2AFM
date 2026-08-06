@@ -84,7 +84,108 @@ la figura publicada salía de un script externo. `plot_method_comparison()` con
 
 ---
 
-## 3. Por qué el gráfico de pesos AFM no colorea por la línea 1/K
+## 3. El vocabulario: dos parejas, y por qué son dos
+
+El artículo usa dos parejas de términos y hace bien, porque nombran dos cosas
+distintas: «fuera de control» es lo que **dice la carta**, y «lote con fallo»
+es lo que **el lote es**. Decisión frente a verdad, que es la misma distinción
+que sostiene el diseño de las cartas (apartado 2).
+
+El problema no era tener dos parejas sino tener cinco formas de nombrarlas.
+El paquete fija estas:
+
+| Idea | Pareja | Título de la leyenda |
+|---|---|---|
+| Veredicto de la carta | **Out of control / In control** | `Chart verdict` |
+| Condición del lote | **Faulty batch / Fault-free batch** | `Batch condition` |
+
+**Por qué «In control» y no «Under control».** «Under control» es un calco del
+español. La literatura de control estadístico dice *in control* y *out of
+control*, sin excepción en Montgomery. Además la consola del paquete ya decía
+«out of control» e «in control» en `print` y en `summary`, así que esta
+elección no obligó a reescribir nada de texto.
+
+**Por qué «Fault-free» y no «Normal».** «Lote en condiciones normales» se
+traduce de forma natural por *normal batch*, y en este artículo concreto eso
+es una ambigüedad cara: el texto está lleno de distribuciones normales.
+*Fault-free* es el complemento exacto de *faulty*, no contiene la palabra
+*control* y describe justo lo que ocurre en el Tennessee Eastman, donde el
+lote lleva un fallo inyectado o no lo lleva.
+
+**Por qué pueden convivir.** Tres condiciones, y las tres se cumplen: nunca
+aparecen en la misma leyenda, porque el color codifica o una cosa o la otra y
+nunca las dos; no comparten ninguna palabra discriminante, solo el sustantivo
+«batch»; y el título de la leyenda nombra cuál de las dos se está mirando. Esa
+tercera condición es la que de verdad lo resuelve: quien ve dos figuras
+seguidas no tiene que preguntarse si el mismo color significa lo mismo, porque
+la leyenda se lo dice.
+
+### El tercer nivel: la columna `Status` de los datos
+
+La misma decisión hubo que aplicarla un nivel más abajo. `simulate_batch_process()`
+generaba la columna `Status` con los valores «Under Control» / «Out of
+Control», y esa columna es **verdad de campo**, no veredicto: dice qué lotes
+se generaron con fallo.
+
+El síntoma era el ejemplo de la documentación, que construía el argumento
+`faulty` así:
+
+```r
+faulty <- afm_phase2$Batch[afm_phase2$Status == "Out of Control"]
+```
+
+Un argumento llamado `faulty`, que es verdad, filtrando por una etiqueta que
+nombra un veredicto. El ejemplo enseñaba exactamente la confusión que las
+figuras acababan de eliminar.
+
+`Status` pasa por tanto a **`Faulty` / `Fault-free`**, la misma pareja que la
+leyenda de la verdad. Se hizo **antes de publicar los datos**, y ese momento
+importa: una vez que los `.rda` estén en Zenodo o en CRAN, cambiar los valores
+de una columna rompe el código de quien ya los use.
+
+Comprobado al regenerar con la misma semilla: **las columnas `Var1` a `Var4`
+son idénticas byte a byte** —`identical()` sobre los objetos serializados,
+diferencia máxima 0—, el identificador de lote no se mueve, y las tres anclas
+siguen en 19.69285, 13 y 19.46440, con el T² máximo en 44.8193. No fue un
+cambio de datos sino de rótulos.
+
+En la misma pasada se cerró `ContaminationType`, que tenía el nivel `OOC` en
+Fase 2: la misma jerga de veredicto, un nivel más abajo. Pasa a **`Shifted`**,
+el mismo nombre que ya usaba Fase 1, y los niveles quedan en
+`Clean | Outliers | Shifted`.
+
+El motivo es que **es literalmente la misma línea de código**: Fase 1 hace
+`mu + shift_contam * sigma_vec` y Fase 2 `mu + shift_ooc * sigma_vec`, y
+ambas siguen con el mismo `gen_batch(I, mu_k, Sigma)`. Mismo desplazamiento de
+la media, misma covarianza; solo cambia la magnitud, que es un parámetro y no
+una categoría.
+
+Sí hay una diferencia real entre los dos casos, pero **es de papel y no de
+mecanismo**: en Fase 1 un lote desplazado es contaminación que el método debe
+absorber, en Fase 2 es la señal que debe detectar. Ese papel lo determina por
+completo la columna `Phase`, así que codificarlo otra vez en
+`ContaminationType` era repetir información, y repetirla con dos palabras
+distintas inducía a creer que eran dos fenómenos.
+
+Cada columna responde ahora a una sola pregunta: `ContaminationType` a cómo se
+estropeó el lote, `Phase` a dónde está, `Status` a si lleva fallo.
+
+### PENDIENTE DE LA TRADUCCIÓN DEL ARTÍCULO
+
+La Figura 6 rotula hoy «In-control batch» / «Faulty batch». Al traducir el
+artículo, **esa leyenda debe pasar a «Fault-free batch» / «Faulty batch»**, no
+a la traducción literal.
+
+El motivo: la Figura 6 colorea por **verdad**, y «In-control batch» usaría
+para la verdad la misma expresión que el resto del artículo usa para el
+**veredicto**. La misma frase nombraría dos cosas distintas en figuras
+contiguas, que es exactamente la confusión que la separación de vocabularios
+evita. Es un cambio de dos palabras y es fácil que se pierda en la traducción,
+de ahí que quede anotado aquí.
+
+---
+
+## 4. Por qué el gráfico de pesos AFM no colorea por la línea 1/K
 
 `plot_afm_weights()` dibuja la referencia en el peso uniforme `1/K` pero no
 colorea las barras según caigan por debajo o por encima. La tentación es
@@ -111,6 +212,14 @@ Las barras van por tanto en un color neutro, y el resalte queda en manos de
 quien llama, mediante `highlight_lowest`, que es una decisión de presentación
 y no un juicio del paquete.
 
+**Y por eso su línea de referencia no es burdeos.** En las dos cartas de
+control la línea es un **límite**: cruzarla dispara una alarma, y el burdeos
+es el color de la alarma en todo el paquete. Aquí `1/K` **no es un límite**:
+cruzarlo no significa nada, como acaban de demostrar los 17 de 30. Se dibuja
+en pizarra `#2C3E50` para decir que es una referencia y no un umbral. Los dos
+colores distinguen dos clases de línea; no es un descuido, y está escrito en
+el `@details` de las tres funciones.
+
 Conviene recordar además qué mide el peso: dispersión interna, vía el primer
 autovalor. No mide posición. Un lote trasladado en bloque, sin cambiar de
 forma, conserva su peso intacto. La ponderación protege `Sw`; no protege el
@@ -120,7 +229,7 @@ peso ordena dispersión, no clasifica lotes.
 
 ---
 
-## 4. La cita de la descomposición del T²
+## 5. La cita de la descomposición del T²
 
 La referencia correcta para la descomposición es:
 
@@ -156,7 +265,7 @@ indirecta.
 
 ---
 
-## 5. Estado de la descomposición del T² sobre `Sw`
+## 6. Estado de la descomposición del T² sobre `Sw`
 
 La descomposición por variables no está implementada. No es un olvido: la
 parte algebraica se traslada sin problema, y la parte distributiva no.
@@ -240,7 +349,7 @@ sirve.
 
 ---
 
-## 6. Lotes de Fase 1 de tamaño desigual
+## 7. Lotes de Fase 1 de tamaño desigual
 
 El límite de control supone un tamaño de lote común I, a través de
 `m* = round(I·h)`. La calibración en sí no lo necesita: MCD, los pesos, `Sw` y
@@ -300,7 +409,7 @@ cambiaba el límite** sin cambiar un solo dato.
 
 ---
 
-## 7. Por qué el ejemplo usa la semilla 20260425
+## 8. Por qué el ejemplo usa la semilla 20260425
 
 Toda la documentación del paquete —ejemplos, viñeta y README— usa un único
 escenario, el de la configuración base del artículo:

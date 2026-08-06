@@ -39,6 +39,10 @@
 #'   independent vertical scales. See Details.
 #' @param labels Character vector of length 2 with the panel titles. Default
 #'   \code{c("AFM-MCD (robust)", "Classical Hotelling")}.
+#' @param title Character. Title of the whole figure, or \code{NULL} for none.
+#'   Default "Same Phase 2 batches, two methods". A figure exported to PNG or
+#'   PDF and pasted into a report carries no journal caption, so it has to say
+#'   what it is on its own.
 #' @param save_path Optional character. Path stem (without extension) for
 #'   export as PNG (300 dpi) and PDF. Default \code{NULL} writes nothing.
 #'
@@ -55,9 +59,14 @@
 #' caption, because the lines that do matter get skipped with it.
 #'
 #' \strong{Colouring by truth versus by verdict.} With \code{faulty} the points
-#' are coloured "In-control batch" and "Faulty batch", and the reader sees
-#' faulty batches sitting below a limit that never fired. Without it the
-#' colours can only show each chart's own verdict, "Signalled" and "No signal".
+#' are coloured "Faulty batch" and "Fault-free batch" under a legend titled
+#' "Batch condition", and the reader sees faulty batches sitting below a limit
+#' that never fired. Without it the colours can only show each chart's own
+#' verdict, "Out of control" and "In control", under a legend titled "Chart
+#' verdict". The two pairs share no word and never appear together, and the
+#' legend title names which of the two the colours encode: a reader looking at
+#' this figure next to \code{\link{plot_control_chart}} should never have to
+#' wonder whether the same colour means the same thing.
 #' Which batches are genuinely faulty is knowable in a simulation, because we
 #' generate it, and in a labelled benchmark such as Tennessee Eastman, because
 #' the data carries it. It is never knowable on a plant floor: that is the very
@@ -127,7 +136,7 @@
 #' # points can be coloured by truth: faulty batches sitting below a limit
 #' # that never fired. Real monitoring data carries no such column.
 #' truth <- as.character(unique(
-#'   afm_phase2$Batch[afm_phase2$Status == "Out of Control"]
+#'   afm_phase2$Batch[afm_phase2$Status == "Faulty"]
 #' ))
 #' plot_method_comparison(study, faulty = truth)
 #'
@@ -145,6 +154,7 @@ plot_method_comparison <- function(robust,
                                    scale = c("ratio", "T2"),
                                    labels = c("AFM-MCD (robust)",
                                               "Classical Hotelling"),
+                                   title = "Same Phase 2 batches, two methods",
                                    save_path = NULL) {
 
   scale     <- match.arg(scale)
@@ -221,6 +231,9 @@ plot_method_comparison <- function(robust,
   if (!is.character(labels) || length(labels) != 2 || anyDuplicated(labels)) {
     stop("'labels' must be two distinct character strings.")
   }
+  if (!is.null(title) && (!is.character(title) || length(title) != 1)) {
+    stop("'title' must be a single character string, or NULL for no title.")
+  }
   if (!is.null(faulty)) {
     faulty <- as.character(faulty)
     unknown <- setdiff(faulty, b_r)
@@ -262,13 +275,17 @@ plot_method_comparison <- function(robust,
   # --- Colour: truth when it was supplied, verdict otherwise ---
   by_truth <- colour_by == "truth" ||
     (colour_by == "auto" && !is.null(faulty))
+  # Dos vocabularios, uno por idea, sin ninguna palabra en comun, y el titulo
+  # de la leyenda dice cual de los dos se esta mirando.
   if (by_truth) {
-    lv <- c("In-control batch", "Faulty batch")
+    lv <- c("Fault-free batch", "Faulty batch")
+    legend_title <- "Batch condition"
     plot_df$Status <- factor(
       ifelse(plot_df$Batch %in% faulty, lv[2], lv[1]), levels = lv
     )
   } else {
-    lv <- c("No signal", "Signalled")
+    lv <- c("In control", "Out of control")
+    legend_title <- "Chart verdict"
     plot_df$Status <- factor(ifelse(plot_df$flagged, lv[2], lv[1]), levels = lv)
   }
   color_map <- stats::setNames(c("#3FA9B6", "#A02D31"), lv)
@@ -339,7 +356,8 @@ plot_method_comparison <- function(robust,
                              color = .data$Status),
       size = 2.4
     ) +
-    ggplot2::scale_color_manual(values = color_map, drop = FALSE, name = NULL)
+    ggplot2::scale_color_manual(values = color_map, drop = FALSE,
+                                name = legend_title)
 
   if (isTRUE(diagnostics)) {
     only_r <- b_r[flag_r & !flag_c]
@@ -411,6 +429,7 @@ plot_method_comparison <- function(robust,
     ggplot2::facet_wrap(ggplot2::vars(.data$Method), ncol = 2,
                         scales = if (scale == "ratio") "fixed" else "free_y") +
     ggplot2::labs(
+      title = title,
       x = "Batch",
       y = if (scale == "ratio") {
         "T2 / own control limit"

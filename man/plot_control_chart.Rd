@@ -10,7 +10,7 @@ plot_control_chart(
   method_label = "Control chart",
   alpha = NULL,
   y_max = NULL,
-  show_values = TRUE,
+  show_values = FALSE,
   save_path = NULL
 )
 }
@@ -37,9 +37,12 @@ as "UCL = X (alpha = Y)". Default \code{NULL} (not displayed).}
 \code{NULL} = auto-scale to \code{max(1.20 * UCL, 1.18 * max(T2))} so
 that OOC batch labels have head-room.}
 
-\item{show_values}{Logical. If \code{TRUE} (default), prints the T-squared
-numerical value above each batch. Set to \code{FALSE} for a cleaner chart
-when the number of batches is large.}
+\item{show_values}{Logical. If \code{TRUE}, prints the T-squared numerical
+value above every batch. Default \code{FALSE}: with more than a handful of
+batches those labels collide with each other and with the out-of-control
+identifiers, and the exact value of an in-control batch supports no
+decision. The numbers are all in the \code{T2} column of the data frame
+you passed in.}
 
 \item{save_path}{Optional character. Path stem (without extension) to
 which the chart is exported as both PNG (300 dpi) and PDF at
@@ -59,8 +62,22 @@ their endpoints. A status legend appears on the right margin and the UCL
 is labeled inline with its numerical value.
 }
 \details{
-Each batch is classified as either "Under Control" (T-squared <= UCL,
-shown in cyan) or "Out of Control" (T-squared > UCL, shown in burgundy).
+Each batch is classified as either "In control" (T-squared <= UCL, shown in
+cyan) or "Out of control" (T-squared > UCL, shown in burgundy), and the
+legend is titled "Chart verdict" to say what the colours encode. That pair
+of terms is the chart's verdict, and it is used identically in
+\code{\link{plot_method_comparison}}, in \code{summary.afm_mcd_study} and
+in the console output. It is deliberately distinct from the pair that names
+what a batch \emph{is} - "Faulty batch" and "Fault-free batch" - which
+appears only where ground truth was supplied by the caller.
+
+\strong{On the colour of the limit line.} It is burgundy here and in
+\code{\link{plot_method_comparison}} because in both figures the line is a
+limit: crossing it raises an alarm. In \code{\link{plot_afm_weights}} the
+reference line is drawn in slate instead, because 1/K is not a limit and
+crossing it means nothing. The two colours say which kind of line you are
+looking at; it is not an oversight.
+
 This binary classification is determined exclusively by the UCL: the
 function makes no use of contamination labels or ground truth, since in
 production monitoring this information is not available. For Monte Carlo
@@ -78,10 +95,12 @@ that never fired. That is a validation device. It has no place in
 production monitoring, where which batches are faulty is precisely the
 question the chart is being asked.
 
-For paired comparisons of two methods on the same data (e.g. classical
-Hotelling vs AFM-MCD), call \code{plot_control_chart} twice and display
-the two plots separately, which is the convention adopted in the package
-vignette.
+For paired comparisons of two methods on the same batches (classical
+Hotelling against AFM-MCD), use \code{\link{plot_method_comparison}}, which
+puts both charts on one figure with each batch in the same position in the
+two panels. Calling this function twice also works and is what the vignette
+still does when it introduces the two methods, but then the reader has to
+match batches across two separate images by eye.
 }
 \examples{
 # End-to-end pipeline a quality engineer would run for a new lot:

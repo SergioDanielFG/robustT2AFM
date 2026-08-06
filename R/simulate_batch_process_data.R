@@ -30,8 +30,22 @@
 #' @param seed Optional integer for reproducibility.
 #'
 #' @return Data frame with columns Batch, Phase, Status, ContaminationType,
-#'   and Var1..VarJ. ContaminationType describes each batch: "Clean",
-#'   "Outliers", "Shifted", or "OOC".
+#'   and Var1..VarJ. \code{Status} is "Faulty" or "Fault-free" and
+#'   \code{ContaminationType} says how a batch was spoiled: "Clean",
+#'   "Outliers" or "Shifted". A wholly shifted batch is labelled "Shifted" in
+#'   both phases, because it is the same mechanism: the mean is displaced and
+#'   the covariance left alone. What differs is the role, contamination to be
+#'   absorbed in Phase 1 and a signal to be detected in Phase 2, and the
+#'   \code{Phase} column already says which.
+#'
+#'   Both columns are \strong{ground truth}, available only because the data
+#'   was generated on purpose, and they use the vocabulary of truth rather
+#'   than the vocabulary of the chart's verdict: a batch is "Faulty", it is
+#'   not "out of control", because being out of control is what a chart
+#'   decides and not what a batch is. Real process data carries neither
+#'   column. Their intended use is to supply the \code{faulty} argument of
+#'   \code{\link{plot_method_comparison}} and to score detections in a
+#'   simulation study.
 #'
 #' @details
 #' Two types of Phase 1 contamination are supported:
@@ -72,21 +86,41 @@ simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
                                    seed = NULL) {
 
   # --- Input validation ---
-  if (K1 < 2 || K1 != round(K1)) stop("'K1' must be integer >= 2.")
-  if (K2 < 0 || K2 != round(K2)) stop("'K2' must be non-negative integer.")
-  if (I < 2 || I != round(I)) stop("'I' must be integer >= 2.")
-  if (J < 2 || J != round(J)) stop("'J' must be integer >= 2.")
+  if (K1 < 2 || K1 != round(K1)) {
+    stop("'K1' must be a whole number >= 2 (Phase 1 batches). You provided: ",
+         K1, ".", call. = FALSE)
+  }
+  if (K2 < 0 || K2 != round(K2)) {
+    stop("'K2' must be a whole number >= 0 (Phase 2 batches; 0 generates no ",
+         "Phase 2). You provided: ", K2, ".", call. = FALSE)
+  }
+  if (I < 2 || I != round(I)) {
+    stop("'I' must be a whole number >= 2 (observations per batch). You ",
+         "provided: ", I, ".", call. = FALSE)
+  }
+  if (J < 2 || J != round(J)) {
+    stop("'J' must be a whole number >= 2 (process variables). You provided: ",
+         J, ".", call. = FALSE)
+  }
   if (outlier_batches_F1 < 0 || outlier_batches_F1 > K1) {
-    stop("'outlier_batches_F1' must be in [0, K1].")
+    stop("'outlier_batches_F1' is the number of Phase 1 batches carrying ",
+         "outliers, so it must be between 0 and K1 = ", K1,
+         ". You provided: ", outlier_batches_F1, ".", call. = FALSE)
   }
   if (outlier_rate < 0 || outlier_rate > 0.5) {
-    stop("'outlier_rate' must be in [0, 0.5].")
+    stop("'outlier_rate' is the fraction of observations spoiled inside an ",
+         "affected batch, so it must be between 0 and 0.5. You provided: ",
+         outlier_rate, ".", call. = FALSE)
   }
   if (prop_contam_F1 < 0 || prop_contam_F1 >= 1) {
-    stop("'prop_contam_F1' must be in [0, 1).")
+    stop("'prop_contam_F1' is the proportion of wholly shifted Phase 1 ",
+         "batches, so it must be in [0, 1). You provided: ", prop_contam_F1,
+         ".", call. = FALSE)
   }
   if (prop_ooc_F2 < 0 || prop_ooc_F2 >= 1) {
-    stop("'prop_ooc_F2' must be in [0, 1).")
+    stop("'prop_ooc_F2' is the proportion of off-target Phase 2 batches, so ",
+         "it must be in [0, 1); 1 is excluded, use 0.95 for 19 of 20. You ",
+         "provided: ", prop_ooc_F2, ".", call. = FALSE)
   }
 
   if (!is.null(seed)) set.seed(seed)
@@ -149,15 +183,15 @@ simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
       mu_k <- mu + shift_contam * sigma_vec
       X <- gen_batch(I, mu_k, Sigma)
       contam_type <- "Shifted"
-      status <- "Out of Control"
+      status <- "Faulty"
     } else if (has_outliers) {
       X <- gen_batch_with_outliers(I, mu, Sigma, outlier_rate, outlier_shift)
       contam_type <- "Outliers"
-      status <- "Out of Control"
+      status <- "Faulty"
     } else {
       X <- gen_batch(I, mu, Sigma)
       contam_type <- "Clean"
-      status <- "Under Control"
+      status <- "Fault-free"
     }
 
     data.frame(
@@ -179,8 +213,11 @@ simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
       data.frame(
         Batch = paste0("F2_B", sprintf("%02d", k)),
         Phase = "Phase 2",
-        Status = if (is_ooc) "Out of Control" else "Under Control",
-        ContaminationType = if (is_ooc) "OOC" else "Clean",
+        Status = if (is_ooc) "Faulty" else "Fault-free",
+        # "Shifted", igual que en Fase 1: es la misma linea de codigo, mismo
+        # desplazamiento de la media y misma covarianza. Lo que cambia es el
+        # papel, absorber frente a detectar, y eso ya lo dice la columna Phase.
+        ContaminationType = if (is_ooc) "Shifted" else "Clean",
         X,
         stringsAsFactors = FALSE
       )
@@ -193,9 +230,14 @@ simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
   sim_data <- do.call(rbind, c(phase1_list, phase2_list))
   sim_data$Batch <- factor(sim_data$Batch)
   sim_data$Phase <- factor(sim_data$Phase, levels = c("Phase 1", "Phase 2"))
-  sim_data$Status <- factor(sim_data$Status, levels = c("Under Control", "Out of Control"))
+  # Status es VERDAD de campo, no veredicto de la carta, asi que usa el
+  # vocabulario de la verdad: Faulty / Fault-free. "Out of Control" era el
+  # vocabulario del veredicto y confundia las dos ideas justo en la columna
+  # que sirve para construir el argumento 'faulty'.
+  sim_data$Status <- factor(sim_data$Status,
+                            levels = c("Fault-free", "Faulty"))
   sim_data$ContaminationType <- factor(sim_data$ContaminationType,
-                                       levels = c("Clean", "Outliers", "Shifted", "OOC"))
+                                       levels = c("Clean", "Outliers", "Shifted"))
 
   return(sim_data)
 }

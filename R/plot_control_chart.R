@@ -25,9 +25,12 @@
 #' @param y_max Optional numeric. Upper limit of the y-axis. Default
 #'   \code{NULL} = auto-scale to \code{max(1.20 * UCL, 1.18 * max(T2))} so
 #'   that OOC batch labels have head-room.
-#' @param show_values Logical. If \code{TRUE} (default), prints the T-squared
-#'   numerical value above each batch. Set to \code{FALSE} for a cleaner chart
-#'   when the number of batches is large.
+#' @param show_values Logical. If \code{TRUE}, prints the T-squared numerical
+#'   value above every batch. Default \code{FALSE}: with more than a handful of
+#'   batches those labels collide with each other and with the out-of-control
+#'   identifiers, and the exact value of an in-control batch supports no
+#'   decision. The numbers are all in the \code{T2} column of the data frame
+#'   you passed in.
 #' @param save_path Optional character. Path stem (without extension) to
 #'   which the chart is exported as both PNG (300 dpi) and PDF at
 #'   publication dimensions (7 x 4.5 in). Default \code{NULL} (no export).
@@ -36,8 +39,22 @@
 #'   graphics device.
 #'
 #' @details
-#' Each batch is classified as either "Under Control" (T-squared <= UCL,
-#' shown in cyan) or "Out of Control" (T-squared > UCL, shown in burgundy).
+#' Each batch is classified as either "In control" (T-squared <= UCL, shown in
+#' cyan) or "Out of control" (T-squared > UCL, shown in burgundy), and the
+#' legend is titled "Chart verdict" to say what the colours encode. That pair
+#' of terms is the chart's verdict, and it is used identically in
+#' \code{\link{plot_method_comparison}}, in \code{summary.afm_mcd_study} and
+#' in the console output. It is deliberately distinct from the pair that names
+#' what a batch \emph{is} - "Faulty batch" and "Fault-free batch" - which
+#' appears only where ground truth was supplied by the caller.
+#'
+#' \strong{On the colour of the limit line.} It is burgundy here and in
+#' \code{\link{plot_method_comparison}} because in both figures the line is a
+#' limit: crossing it raises an alarm. In \code{\link{plot_afm_weights}} the
+#' reference line is drawn in slate instead, because 1/K is not a limit and
+#' crossing it means nothing. The two colours say which kind of line you are
+#' looking at; it is not an oversight.
+#'
 #' This binary classification is determined exclusively by the UCL: the
 #' function makes no use of contamination labels or ground truth, since in
 #' production monitoring this information is not available. For Monte Carlo
@@ -55,10 +72,12 @@
 #' production monitoring, where which batches are faulty is precisely the
 #' question the chart is being asked.
 #'
-#' For paired comparisons of two methods on the same data (e.g. classical
-#' Hotelling vs AFM-MCD), call \code{plot_control_chart} twice and display
-#' the two plots separately, which is the convention adopted in the package
-#' vignette.
+#' For paired comparisons of two methods on the same batches (classical
+#' Hotelling against AFM-MCD), use \code{\link{plot_method_comparison}}, which
+#' puts both charts on one figure with each batch in the same position in the
+#' two panels. Calling this function twice also works and is what the vignette
+#' still does when it introduces the two methods, but then the reader has to
+#' match batches across two separate images by eye.
 #'
 #' @references
 #' Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality
@@ -100,7 +119,7 @@ plot_control_chart <- function(monitor_result,
                                method_label = "Control chart",
                                alpha = NULL,
                                y_max = NULL,
-                               show_values = TRUE,
+                               show_values = FALSE,
                                save_path = NULL) {
 
   # --- Input validation ---
@@ -151,25 +170,33 @@ plot_control_chart <- function(monitor_result,
     stringsAsFactors = FALSE
   )
 
-  # --- Classify each batch as Under Control or Out of Control ---
-  plot_df$Status <- ifelse(plot_df$T2 > UCL, "Out of Control", "Under Control")
+  # --- Classify each batch as In control or Out of control ---
+  # Vocabulario del veredicto de la carta, comun a las tres figuras y a la
+  # consola. "In control", no "under control", que es un calco: la literatura
+  # de control estadistico dice in-control / out-of-control.
+  plot_df$Status <- ifelse(plot_df$T2 > UCL, "Out of control", "In control")
   plot_df$Status <- factor(plot_df$Status,
-                           levels = c("Under Control", "Out of Control"))
+                           levels = c("In control", "Out of control"))
 
   # --- Color palette ---
-  color_map <- c("Under Control" = "#3FA9B6",   # cyan/turquoise
-                 "Out of Control" = "#A02D31")   # burgundy red
+  color_map <- c("In control" = "#3FA9B6",     # cyan/turquoise
+                 "Out of control" = "#A02D31")  # burgundy red
 
-  # --- Compute y-axis upper bound (extra head-room for OOC labels) ---
+  # --- Compute y-axis upper bound ---
+  # Solo hace falta hueco para las etiquetas de lote OOC, que van escalonadas
+  # en dos alturas. Sin las etiquetas de valor, el 20% anterior era espacio
+  # muerto.
   if (is.null(y_max)) {
-    y_max <- max(1.20 * UCL, 1.18 * max(plot_df$T2, na.rm = TRUE))
+    head_room <- if (isTRUE(show_values)) 1.20 else 1.12
+    y_max <- max(head_room * UCL, head_room * max(plot_df$T2, na.rm = TRUE))
   }
 
   # --- Summary of OOC batches (for annotation) ---
-  n_ooc     <- sum(plot_df$Status == "Out of Control")
+  n_ooc     <- sum(plot_df$Status == "Out of control")
   n_total   <- nrow(plot_df)
   pct_ooc   <- if (n_total > 0) 100 * n_ooc / n_total else 0
-  summary_label <- paste0(n_ooc, " OOC / ", n_total,
+  # "OOC" era jerga interna que ninguna leyenda definia.
+  summary_label <- paste0(n_ooc, " out of control / ", n_total,
                           " (", format(round(pct_ooc, 1), nsmall = 1), "%)")
 
   ucl_label <- if (is.null(alpha)) {
@@ -179,8 +206,8 @@ plot_control_chart <- function(monitor_result,
            "  (alpha = ", format(alpha, scientific = FALSE), ")")
   }
 
-  # --- Segment colors: each segment colored "Out of Control" if either
-  #     endpoint is Out of Control, otherwise "Under Control" ---
+  # --- Segment colors: each segment colored "Out of control" if either
+  #     endpoint is out of control, otherwise "In control" ---
   if (nrow(plot_df) >= 2) {
     seg_df <- data.frame(
       x_start = plot_df$BatchIdx[-nrow(plot_df)],
@@ -188,14 +215,14 @@ plot_control_chart <- function(monitor_result,
       y_start = plot_df$T2[-nrow(plot_df)],
       y_end   = plot_df$T2[-1],
       seg_color = ifelse(
-        plot_df$Status[-nrow(plot_df)] == "Out of Control" |
-          plot_df$Status[-1]            == "Out of Control",
-        "Out of Control", "Under Control"
+        plot_df$Status[-nrow(plot_df)] == "Out of control" |
+          plot_df$Status[-1]            == "Out of control",
+        "Out of control", "In control"
       ),
       stringsAsFactors = FALSE
     )
     seg_df$seg_color <- factor(seg_df$seg_color,
-                               levels = c("Under Control", "Out of Control"))
+                               levels = c("In control", "Out of control"))
   } else {
     seg_df <- NULL
   }
@@ -233,14 +260,16 @@ plot_control_chart <- function(monitor_result,
 
     # Color scale shared by points and segments
     ggplot2::scale_color_manual(values = color_map, drop = FALSE,
-                                name = "Status") +
+                                name = "Chart verdict") +
 
-    # UCL label inline at the right margin (with optional alpha)
+    # UCL label inline at the right margin, BELOW the line: the out-of-control
+    # identifiers always sit above their points, so the strip just under the
+    # limit at the right edge is the one place reliably free.
     ggplot2::annotate("text",
-                      x = max(plot_df$BatchIdx),
+                      x = max(plot_df$BatchIdx) + 0.9,
                       y = UCL,
                       label = ucl_label,
-                      hjust = 1.0, vjust = -0.6,
+                      hjust = 1.0, vjust = 1.5,
                       color = "#A02D31", size = 3.5,
                       fontface = "plain") +
 
@@ -262,10 +291,12 @@ plot_control_chart <- function(monitor_result,
 
     ggplot2::scale_y_continuous(limits = c(0, y_max),
                                 expand = c(0, 0)) +
+    # Margen a ambos lados: sin el, las etiquetas de lote de los extremos se
+    # recortan contra el borde del panel.
     ggplot2::scale_x_continuous(
       breaks = plot_df$BatchIdx,
       labels = as.character(plot_df$Batch),
-      expand = c(0.03, 0.03)
+      expand = ggplot2::expansion(add = 0.9)
     ) +
 
     ggplot2::theme_minimal(base_size = 11) +
@@ -279,10 +310,10 @@ plot_control_chart <- function(monitor_result,
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_line(color = "grey90",
                                                  linewidth = 0.3),
-      legend.position  = "right",
+      legend.position  = "bottom",
       legend.title     = ggplot2::element_text(face = "bold", size = 10),
       legend.text      = ggplot2::element_text(size = 9),
-      legend.margin    = ggplot2::margin(l = 8),
+      legend.margin    = ggplot2::margin(t = 4),
       plot.margin      = ggplot2::margin(t = 8, r = 12, b = 8, l = 8)
     ) +
     ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 3)))
@@ -299,13 +330,28 @@ plot_control_chart <- function(monitor_result,
   }
 
   # --- Bold red batch-ID labels above each OOC point ---
-  ooc_df <- plot_df[plot_df$Status == "Out of Control", , drop = FALSE]
+  # Escalonadas: dos lotes OOC contiguos en el eje x tienen etiquetas que se
+  # tocan, y en una racha larga se funden. Se alterna la altura solo dentro
+  # de la racha; al abrirse un hueco de mas de 2 posiciones se vuelve abajo.
+  ooc_df <- plot_df[plot_df$Status == "Out of control", , drop = FALSE]
   if (nrow(ooc_df) > 0) {
+    ooc_df <- ooc_df[order(ooc_df$BatchIdx), , drop = FALSE]
+    level <- integer(nrow(ooc_df))
+    level[1] <- 1L
+    if (nrow(ooc_df) > 1) {
+      for (i in 2:nrow(ooc_df)) {
+        near <- (ooc_df$BatchIdx[i] - ooc_df$BatchIdx[i - 1]) <= 2
+        level[i] <- if (near) 3L - level[i - 1] else 1L
+      }
+    }
+    base_v <- if (isTRUE(show_values)) -2.8 else -1.2
+    ooc_df$vjust <- ifelse(level == 1L, base_v, base_v - 1.3)
+
     p <- p + ggplot2::geom_text(
       data = ooc_df,
       mapping = ggplot2::aes(x = .data$BatchIdx, y = .data$T2,
-                             label = as.character(.data$Batch)),
-      vjust = if (isTRUE(show_values)) -2.8 else -1.4,
+                             label = as.character(.data$Batch),
+                             vjust = .data$vjust),
       size = 3.0, color = "#A02D31", fontface = "bold",
       show.legend = FALSE
     )

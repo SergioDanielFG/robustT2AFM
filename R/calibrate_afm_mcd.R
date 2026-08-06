@@ -111,10 +111,8 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
   }
   check_batch_col(data, batch_col, "data",
                   "calibrate_afm_mcd(data, variables, batch_col = \"<name>\")")
-  if (!all(variables %in% colnames(data))) {
-    missing_vars <- setdiff(variables, colnames(data))
-    stop("Variables not found in data: ", paste(missing_vars, collapse = ", "))
-  }
+  check_variables(data, variables, "data",
+                  "calibrate_afm_mcd(data, variables = c(\"Var1\", \"Var2\"))")
   if (!is.numeric(mcd_alpha) || length(mcd_alpha) != 1 ||
       mcd_alpha < 0.60 || mcd_alpha > 0.90) {
     stop("mcd_alpha must be a single numeric value in [0.60, 0.90]. ",

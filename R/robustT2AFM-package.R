@@ -1,0 +1,63 @@
+#' robustT2AFM: Robust T-squared Control Charts for Batch Processes
+#'
+#' A Hotelling T-squared control chart assumes the historical batches used to
+#' calibrate it were in control. They rarely all are, and a few contaminated
+#' batches inflate the reference covariance, which widens the control limit
+#' and makes the chart miss real alarms. This package calibrates the reference
+#' robustly, batch by batch, so the limit stays where it should and the chart
+#' keeps signalling.
+#'
+#' @section Where to start:
+#' One call does the whole study: Phase 1 calibration, the control limit,
+#' Phase 2 monitoring and the chart.
+#'
+#' \preformatted{
+#' library(robustT2AFM)
+#' study <- run_afm_mcd(afm_phase1, afm_phase2)
+#' }
+#'
+#' Printing \code{study} says how many batches are out of control and which
+#' ones; \code{summary(study)} gives the full report; \code{study$chart} is
+#' the control chart. \code{afm_phase1} and \code{afm_phase2} are simulated
+#' example data sets shipped with the package, so the two lines above run as
+#' they stand. Replace them with your own data frames when you have them: each
+#' needs a column identifying the batch and one numeric column per process
+#' variable.
+#'
+#' @section The rest of the package, by what it is for:
+#' \describe{
+#'   \item{The way in}{\code{\link{run_afm_mcd}}, with its \code{print} and
+#'         \code{summary} methods.}
+#'   \item{The three steps it chains}{\code{\link{calibrate_afm_mcd}} for the
+#'         Phase 1 reference, \code{\link{ucl_F_adjusted}} for the control
+#'         limit, \code{\link{monitor_afm_mcd}} for the Phase 2 statistics.
+#'         Call them directly when you want the pieces.}
+#'   \item{The three charts}{\code{\link{plot_control_chart}} for the chart
+#'         itself, \code{\link{plot_afm_weights}} to see which calibration
+#'         batches carry the most internal dispersion, and
+#'         \code{\link{plot_method_comparison}} to put the robust and the
+#'         classical chart side by side on the same batches.}
+#'   \item{The classical baseline}{\code{\link{hotelling_classical_calibrate}},
+#'         \code{\link{hotelling_classical_monitor}} and
+#'         \code{\link{hotelling_classical_ucl}}, the non-robust chart, kept
+#'         for comparison.}
+#'   \item{The data generator}{\code{\link{simulate_batch_process}}, to build
+#'         scenarios other than the one shipped.}
+#'   \item{The example data}{\code{\link{afm_phase1}} and
+#'         \code{\link{afm_phase2}}.}
+#' }
+#'
+#' @section What this package does not do:
+#' It tells you that a batch is out of control, not which variable put it
+#' there: there is no decomposition of the statistic across variables, so
+#' after an alarm the next step is still yours.
+#'
+#' @references
+#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+#' Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
+#' combining the minimum covariance determinant estimator with multiple
+#' factor analysis weighting. Under review.
+#'
+#' @name robustT2AFM
+#' @aliases robustT2AFM-package
+"_PACKAGE"

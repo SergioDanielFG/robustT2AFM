@@ -19,14 +19,41 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette is deliberately short. It shows the four-line pipeline
-a quality engineer runs to deploy the AFM-MCD Phase 2 control chart,
-why the robust version matters when historical batches are not perfectly
-clean, and what to do when the estimator complains. The method behind
-the code is Frutos-Galarza et al. (2026); see the package references
-for the full derivation.
+This vignette is deliberately short. It shows the one call a quality
+engineer runs to deploy the AFM-MCD Phase 2 control chart, why the
+robust version matters when historical batches are not perfectly clean,
+the four steps behind that call for anyone who wants them, and what to
+do when the estimator complains. The method behind the code is
+Frutos-Galarza et al. (2026); see the package references for the full
+derivation.
 
-## 1. Why not just use classical Hotelling?
+## 1. Start here
+
+The package ships the example data of the paper's base configuration, so
+this runs as it stands:
+
+```{r start}
+library(robustT2AFM)
+
+study <- run_afm_mcd(afm_phase1, afm_phase2)
+study
+```
+
+`afm_phase1` holds 30 historical batches, 6 of them contaminated;
+`afm_phase2` holds 20 batches to monitor, half of them off-target.
+Replace them with your own data when you have it: each needs a column
+identifying the batch and one numeric column per process variable. If
+that column is not called `Batch`, say so with `batch_col = "..."`
+rather than renaming your data.
+
+`summary(study)` prints the full report, and `study$chart` is the
+control chart:
+
+```{r start-chart, fig.alt = "AFM-MCD control chart for Phase 2"}
+study$chart
+```
+
+## 2. Why not just use classical Hotelling?
 
 Classical Hotelling T-squared assumes the Phase 1 calibration batches are
 in control. In practice, one or two historical batches almost always
@@ -47,19 +74,14 @@ Phase 2 then uses simple batch means against the frozen reference
 `(mu_r, S_w)`, without any per-batch trimming. The alarm sensitivity
 of the classical chart is preserved, but the masking is gone.
 
-## 2. Same data, two charts
+## 3. Same data, two charts
 
-To make the point concrete, the package ships the base configuration of
-Frutos-Galarza et al. (2026) ready to use: `afm_phase1`, in which 6 of
-the 30 batches carry 4 outlying observations each (shifted 4 sigma),
-and `afm_phase2`, in which half the batches are off-target by 1 sigma.
-We run the classical chart and the AFM-MCD chart on the **same** data.
+To make the point concrete, we run the classical chart and the AFM-MCD
+chart on the **same** batches. `afm_phase1` has 6 of its 30 batches
+carrying 4 outlying observations each, shifted 4 sigma; half the
+batches of `afm_phase2` are off-target by 1 sigma.
 
 ```{r sim}
-library(robustT2AFM)
-
-data(afm_phase1)
-data(afm_phase2)
 vars   <- paste0("Var", 1:4)
 phase1 <- afm_phase1
 phase2 <- afm_phase2
@@ -119,55 +141,40 @@ Three cautions about those counts, so they are not over-read:
   produced a single false alarm, so nothing in this comparison speaks
   to false-alarm behaviour.
 
-## 3. The pipeline on your own data
+## 4. Your own data, and the four steps behind the one call
 
-Your Phase 1 and Phase 2 data need to sit in a single `data.frame` with:
+Your Phase 1 and Phase 2 data need to sit in `data.frame`s with:
 
-- a `Batch` column identifying each batch (character or factor),
-- one numeric column per process variable (`Var1`, `Var2`, ...).
+- a column identifying each batch (character or factor), called `Batch`
+  unless you say otherwise with `batch_col`,
+- one numeric column per process variable.
 
-In production you load them with `read.csv()` or your MES connector.
-In this vignette we keep the simulator so the code is reproducible:
-
-```r
-# In practice you load one export and split it by phase:
-#   raw    <- read.csv("historical_batches.csv")
-#   phase1 <- subset(raw, Phase == "Phase 1")
-#   phase2 <- subset(raw, Phase == "Phase 2")
-# Here we use the two data sets shipped with the package.
-data(afm_phase1)
-data(afm_phase2)
-```
-
-If your batch identifier is not called `Batch`, say so instead of
-renaming your data:
+In production you load them with `read.csv()` or your MES connector:
 
 ```r
-cal <- calibrate_afm_mcd(my_phase1, vars, batch_col = "Lote")
+raw    <- read.csv("historical_batches.csv")
+phase1 <- subset(raw, Phase == "Phase 1")
+phase2 <- subset(raw, Phase == "Phase 2")
+
+study  <- run_afm_mcd(phase1, phase2, batch_col = "Lote")
 ```
 
-Then the whole study is one call, and the variables are detected for
-you if every other column is non-numeric:
-
-```r
-study <- run_afm_mcd(afm_phase1, afm_phase2)
-study            # how many batches are out of control, and which
-summary(study)   # the full report
-```
-
-The four steps it chains are also available separately, which is how
-the paper's own scripts are written:
+`run_afm_mcd()` recomputes nothing of its own: it calls the four
+functions below in order and keeps their results untouched. Call them
+directly when you want the pieces, which is how the paper's own
+scripts are written:
 
 ```r
 vars <- paste0("Var", 1:4)
-cal  <- calibrate_afm_mcd(afm_phase1, vars)
-ucl  <- ucl_F_adjusted(cal, I = 20)
-mon  <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
+cal  <- calibrate_afm_mcd(afm_phase1, vars)          # Phase 1 reference
+ucl  <- ucl_F_adjusted(cal, I = 20)                  # control limit
+mon  <- monitor_afm_mcd(afm_phase2, cal, vars,       # Phase 2 statistics
+                        ucl = ucl$UCL)
 plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
                    method_label = "AFM-MCD Control Chart - Phase 2")
 ```
 
-## 4. Reading the chart and putting it in a report
+## 5. Reading the chart and putting it in a report
 
 - **Top-left summary** ("N OOC / total (X%)"): how many Phase 2 batches
   crossed the UCL and what fraction of the run that is.
@@ -197,7 +204,7 @@ plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
 # writes phase2_chart.png and phase2_chart.pdf
 ```
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 **Too few observations per batch for MCD.** MCD needs enough rows per
 batch to fit a trimmed covariance. Practical minimum: `I >= J + 2`
@@ -227,10 +234,32 @@ the mean shift you are trying to detect.
 
 **S_w looks singular in Phase 2.** When two variables are almost
 collinear (correlation above ~0.99), `S_w` can be numerically singular
-and `monitor_afm_mcd()` fails when it tries to invert it. Two fixes:
-drop the redundant variable, or increase I so that
-`m* = round(I * 0.67) > J` with margin (again, `m* >= 2 * J` is a good
-target).
+and `monitor_afm_mcd()` cannot invert it. It stops with an error that
+names the likely cause and what to do, rather than the raw message from
+`solve()`. The two fixes it suggests: drop the redundant variable, or
+increase I so that `m* = round(I * 0.67) > J` with margin (again,
+`m* >= 2 * J` is a good target).
+
+A constant column produces the same failure, and that is worth knowing
+because it is how an identifier column usually announces itself. A
+column that varies but is not a measurement — a sample index, a run
+number — will *not* fail: it goes through as a process variable and the
+study completes, looking entirely credible. That is why
+`run_afm_mcd()` always reports which variables it detected when you do
+not name them.
+
+**Batches of different sizes.** Plant data rarely has equal batches:
+one run stops early, another loses discarded rows. Calibration copes
+with that, but the control limit assumes a single batch size I, so
+there is no exact limit for such a calibration.
+`calibrate_afm_mcd()` warns and records `I_phase1` as the size whose
+`m*` equals the average of the per-batch `m*`, which is what matches
+the degrees of freedom of the covariance estimate. The full vector is
+in `calibration$batch_sizes`. To choose the value yourself, pass it:
+
+```r
+ucl <- ucl_F_adjusted(cal, I = 18)
+```
 
 ## Reference
 

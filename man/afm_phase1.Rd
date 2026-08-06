@@ -9,8 +9,9 @@ A data frame with 600 rows and 8 columns:
 \describe{
 \item{Batch}{Factor, batch identifier (\code{F1_B01} to \code{F1_B30}).}
 \item{Phase}{Factor, always "Phase 1" here.}
-\item{Status}{Factor, "Under Control" or "Out of Control". Ground truth,
-see the warning above.}
+\item{Status}{Factor, "Fault-free" or "Faulty". Ground truth, see the
+warning above. It says what the batch \emph{is}, not what a chart
+decided about it, which is why it does not read "out of control".}
 \item{ContaminationType}{Factor, "Clean" or "Outliers". Ground truth,
 see the warning above.}
 \item{Var1, Var2, Var3, Var4}{Numeric process variables, equicorrelated
