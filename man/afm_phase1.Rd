@@ -58,6 +58,10 @@ object. With \code{LazyData} enabled that call is not strictly necessary,
 since the object is available as soon as the package is attached. It is
 kept because it tells the reader where the object comes from; without it
 the name would appear out of nowhere.
+
+For what these two data sets produce when the method is applied to them,
+see the example in \code{\link{run_afm_mcd}}, where the counts appear with
+the caveats they need.
 }
 \examples{
 data(afm_phase1)

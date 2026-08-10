@@ -141,10 +141,11 @@ test_that("print and summary describe the study without altering it", {
   expect_output(print(s), "CONTROL LIMIT")
   expect_output(print(s), "NEXT STEP")
 
-  # The summary must not promise a tolerable percentage of bad points.
+  # The summary must not promise a tolerable percentage of bad points, and
+  # must not present the weights as a contamination verdict.
   out <- paste(capture.output(print(s)), collapse = " ")
   expect_false(grepl("can be bad", out, fixed = TRUE))
-  expect_true(grepl("does not protect the reference", out, fixed = TRUE))
+  expect_true(grepl("not contamination", out, fixed = TRUE))
 
   # No classical block unless it was requested.
   expect_false(grepl("CLASSICAL BASELINE", out, fixed = TRUE))
@@ -160,10 +161,39 @@ test_that("summary prints the classical block with no verdict attached", {
   out <- paste(capture.output(print(s)), collapse = " ")
 
   expect_true(grepl("CLASSICAL BASELINE", out, fixed = TRUE))
-  expect_true(grepl("det(Sp) / det(Sw)", out, fixed = TRUE))
+  expect_true(grepl("trace(Sp) / trace(Sw)", out, fixed = TRUE))
+  expect_true(grepl("det ratio", out, fixed = TRUE))
+  expect_true(grepl("reference centres", out, fixed = TRUE))
   # Numbers only: no claim that either method is the better one.
   expect_false(grepl("better", out, ignore.case = TRUE))
   expect_false(grepl("outperform", out, ignore.case = TRUE))
+})
+
+test_that("the classical block reports three independent measures", {
+  sim  <- make_sim()
+  vars <- paste0("Var", 1:4)
+  study <- run_afm_mcd(subset(sim, Phase == "Phase 1"),
+                       subset(sim, Phase == "Phase 2"),
+                       variables = vars, plot = FALSE,
+                       compare_classical = TRUE)
+  s <- summary(study)
+
+  Sp <- study$classical$calibration$Sp
+  Sw <- study$calibration$Sw
+
+  # Each measure is what it claims to be, computed from the two matrices.
+  expect_equal(s$classical$det_ratio, det(Sp) / det(Sw))
+  expect_equal(s$classical$trace_ratio, sum(diag(Sp)) / sum(diag(Sw)))
+  expect_equal(s$classical$centre_gap,
+               sqrt(sum((study$classical$calibration$mu_global -
+                           study$calibration$mu_r)^2)))
+
+  # The three are independent: the determinant ratio can stay near 1 while
+  # the trace ratio does not, because contamination inflates variances and
+  # correlations at once and the two effects cancel in the determinant.
+  expect_true(all(is.finite(c(s$classical$det_ratio,
+                              s$classical$trace_ratio,
+                              s$classical$centre_gap))))
 })
 
 test_that("run_afm_mcd writes figures only when save_path is given", {

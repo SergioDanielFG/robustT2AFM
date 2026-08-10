@@ -1,12 +1,11 @@
 #' Plot a Hotelling T-squared Control Chart
 #'
-#' Produces a publication-quality control chart from the output of
-#' \code{\link{monitor_afm_mcd}} or \code{\link{hotelling_classical_monitor}},
-#' overlaying the Upper Control Limit (UCL) as a horizontal reference line.
-#' In-control batches are drawn in cyan and out-of-control batches in
-#' burgundy red, with the connecting line segments colored by the status of
-#' their endpoints. A status legend appears on the right margin and the UCL
-#' is labeled inline with its numerical value.
+#' Produces a control chart from the output of \code{\link{monitor_afm_mcd}}
+#' or \code{\link{hotelling_classical_monitor}}, with the Upper Control Limit
+#' as a horizontal reference line. In-control batches are drawn in cyan and
+#' out-of-control batches in burgundy, with the connecting segments coloured
+#' by the status of their endpoints. The limit is labelled inline with its
+#' value and the legend sits below the panel.
 #'
 #' @param monitor_result A data frame returned by
 #'   \code{\link{monitor_afm_mcd}} or
@@ -23,8 +22,9 @@
 #'   compute the UCL. If provided, it is appended to the UCL inline label
 #'   as "UCL = X (alpha = Y)". Default \code{NULL} (not displayed).
 #' @param y_max Optional numeric. Upper limit of the y-axis. Default
-#'   \code{NULL} = auto-scale to \code{max(1.20 * UCL, 1.18 * max(T2))} so
-#'   that OOC batch labels have head-room.
+#'   \code{NULL} auto-scales with head-room above the higher of the limit and
+#'   the largest statistic, a little wider when \code{show_values = TRUE} to
+#'   make room for the labels.
 #' @param show_values Logical. If \code{TRUE}, prints the T-squared numerical
 #'   value above every batch. Default \code{FALSE}: with more than a handful of
 #'   batches those labels collide with each other and with the out-of-control
@@ -35,49 +35,28 @@
 #'   which the chart is exported as both PNG (300 dpi) and PDF at
 #'   publication dimensions (7 x 4.5 in). Default \code{NULL} (no export).
 #'
-#' @return A \code{ggplot} object. The plot is also drawn on the active
-#'   graphics device.
+#' @return A \code{ggplot} object.
 #'
 #' @details
 #' Each batch is classified as either "In control" (T-squared <= UCL, shown in
 #' cyan) or "Out of control" (T-squared > UCL, shown in burgundy), and the
 #' legend is titled "Chart verdict" to say what the colours encode. That pair
-#' of terms is the chart's verdict, and it is used identically in
-#' \code{\link{plot_method_comparison}}, in \code{summary.afm_mcd_study} and
-#' in the console output. It is deliberately distinct from the pair that names
-#' what a batch \emph{is} - "Faulty batch" and "Fault-free batch" - which
-#' appears only where ground truth was supplied by the caller.
+#' of terms is used identically in \code{\link{plot_method_comparison}}, in
+#' \code{summary.afm_mcd_study} and in the console output. It is distinct from
+#' the pair that names what a batch \emph{is}, "Faulty batch" and "Fault-free
+#' batch", which appears only where the caller supplied ground truth.
 #'
-#' \strong{On the colour of the limit line.} It is burgundy here and in
-#' \code{\link{plot_method_comparison}} because in both figures the line is a
-#' limit: crossing it raises an alarm. In \code{\link{plot_afm_weights}} the
-#' reference line is drawn in slate instead, because 1/K is not a limit and
-#' crossing it means nothing. The two colours say which kind of line you are
-#' looking at; it is not an oversight.
+#' The classification comes from the UCL alone. This function never colours by
+#' ground truth, because in production which batches are faulty is the question
+#' the chart is being asked. When you do know the truth, from a simulation you
+#' generated or from a labelled benchmark such as Tennessee Eastman,
+#' \code{\link{plot_method_comparison}} will colour by it through its
+#' \code{faulty} argument. For Monte Carlo studies use the raw output of
+#' \code{monitor_*} and compute confusion matrices directly.
 #'
-#' This binary classification is determined exclusively by the UCL: the
-#' function makes no use of contamination labels or ground truth, since in
-#' production monitoring this information is not available. For Monte Carlo
-#' studies that require ground-truth comparisons (true positives, false
-#' alarms, missed detections), use the raw output of \code{monitor_*} and
-#' compute confusion matrices directly rather than relying on the plot.
-#'
-#' That restriction belongs to this function, not to the package. When the
-#' faulty batches genuinely are known - a simulation you generated, or a
-#' labelled benchmark such as Tennessee Eastman -
-#' \code{\link{plot_method_comparison}} will colour the points by truth if you
-#' hand it that truth through its \code{faulty} argument, which is how the
-#' published comparison figure is read: faulty batches sitting below a limit
-#' that never fired. That is a validation device. It has no place in
-#' production monitoring, where which batches are faulty is precisely the
-#' question the chart is being asked.
-#'
-#' For paired comparisons of two methods on the same batches (classical
-#' Hotelling against AFM-MCD), use \code{\link{plot_method_comparison}}, which
-#' puts both charts on one figure with each batch in the same position in the
-#' two panels. Calling this function twice also works and is what the vignette
-#' still does when it introduces the two methods, but then the reader has to
-#' match batches across two separate images by eye.
+#' To compare two methods on the same batches, use
+#' \code{\link{plot_method_comparison}}, which puts both charts on one figure
+#' with each batch in the same position in the two panels.
 #'
 #' @references
 #' Montgomery, D. C. (2009). \emph{Introduction to Statistical Quality
@@ -94,9 +73,8 @@
 #' @export
 #'
 #' @examples
-#' # End-to-end pipeline a quality engineer would run for a new lot:
-#' # simulate historical and monitoring data, calibrate, compute the
-#' # operational UCL, monitor Phase 2 and produce a labelled control chart.
+#' # 8 of the 20 Phase 2 batches cross the limit. The classical chart on the
+#' # same data flags 2: see plot_method_comparison() for both side by side.
 #' data(afm_phase1)
 #' data(afm_phase2)
 #' vars <- paste0("Var", 1:4)

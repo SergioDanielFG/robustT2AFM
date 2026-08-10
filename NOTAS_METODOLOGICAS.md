@@ -449,3 +449,260 @@ Con delta = 1.0 y alpha = 0.001, además, lo único que separa a los dos método
 en este escenario es la potencia de detección. Ni en las 12 semillas ni en las
 200 réplicas hubo una sola falsa alarma en ninguno de los dos, lo cual
 concuerda con el apartado 1 y no es una limitación del ejemplo.
+
+### Decisiones visuales de `plot_afm_weights`
+
+**Color de la línea de referencia.** Pizarra (#2C3E50), no el burdeos (#A02D31)
+de las líneas de límite en `plot_control_chart` y `plot_method_comparison`.
+Allí la línea es un límite: cruzarla dispara una alarma. Aquí 1/K es la media
+aritmética de los pesos por construcción, y cruzarla no significa nada.
+Pintarla de burdeos insinuaría un umbral que no existe.
+
+**Por qué no se colorea por 1/K.** Medido con K = 30 sobre `afm_phase1`:
+17 de los 30 lotes caen por debajo de 1/K = 0.0333, y solo 6 llevan atípicos.
+Colorear por esa línea marcaría como sospechosa a más de media calibración
+sana. El mismo recuento sale con 2 lotes contaminados y con 6.
+
+**Ejes transpuestos.** Los identificadores van en el eje y para que queden
+horizontales y legibles con los K = 30 lotes del artículo. Ordenar por peso
+ya descarta el orden de corrida, así que no se pierde nada al transponer.
+
+**Rango observado de los pesos.** Sobre `afm_phase1`: de 0.0065 (F1_B17) a
+0.0900 (F1_B04), un factor de casi 14 entre extremos con solo 6 lotes
+ligeramente contaminados.
+### Decisiones de diseño de `plot_method_comparison`
+
+**Por qué la figura no lleva pie.** El mensaje central es que la carta clásica
+no se vuelve nerviosa bajo contaminación, se vuelve sorda. Esa frase es el
+punto entero de la figura y no se imprime debajo: un pie que nadie lee es peor
+que ninguno, porque las líneas que sí importan se saltan con él.
+
+**Por qué `scale = "ratio"` es el defecto.** Con estadísticos crudos hacen
+falta ejes verticales independientes, y entonces las alturas de los dos
+paneles no son comparables. Eso exige una advertencia, y esta figura no tiene
+pie donde ponerla. Dividir por el límite propio elimina la necesidad de la
+advertencia en vez de repetirla. Con `scale = "T2"` la línea de aviso reaparece
+automáticamente: el pie existe solo cuando la figura necesita defenderse de su
+propia lectura natural.
+
+**Verificado sobre `afm_phase2`.** El mismo lote F2_B01 aparece en 1,83 del
+límite en el panel robusto y en 0,87 en el clásico. F2_B04 igual: 1,79 frente
+a 0,87. El conjunto de alarmas del clásico está contenido en el del robusto,
+sin excepciones. Es la demostración del enmascaramiento sin una sola fórmula.
+### Nombres retirados de la documentación de `ucl_F_adjusted`
+
+**"Way 1".** La ayuda llamaba así al límite analítico, citándolo como si el
+artículo usara ese nombre. No lo usa: la Sección 2.5 dice "límite analítico"
+y "límite operativo". El nombre venía de una etapa anterior en la que se
+numeraban las vías candidatas (analítica, K_eff, bootstrap). Al descartarse
+las otras, el nombre perdió sentido y quedó como fósil. Sustituido por la
+referencia a la Ecuación (8).
+
+**Hardin-Rocke.** La ayuda declaraba que esa corrección no se aplica. Hardin y
+Rocke no aparecen en el artículo ni en su bibliografía; la mención venía del
+documento de aclaración del método. Una negación sin referencia y sin
+explicación no informa: el lector no sabe qué es lo que no se aplica ni por
+qué debería importarle. Retirada.
+
+**Los dos alphas.** `mcd_alpha` (fracción de retención MCD, 0.67) y `alpha`
+(tasa de falsas alarmas, 0.001) son parámetros sin relación con nombres
+parecidos. Las firmas están publicadas y no se tocan; el aviso va en la ayuda
+de ambos argumentos.
+### `I_phase1` con lotes de tamaño desigual
+
+**Derivación.** Con lotes desiguales los grados de libertad reales de la
+estimación de covarianza son Σ_k (m*_k − 1). Igualando eso con los K(m* − 1)
+de la fórmula publicada sale m* = media de los m*_k, y de ahí
+I_phase1 = round(m* / h).
+
+**Por qué NO es `round(mean(sizes))`.** Parece lo mismo y no lo es: las dos
+formas discrepan en el 18,6 % de 20 000 vectores aleatorios probados. Ejemplo
+comprobable a mano con tamaños 11, 11, 12, 20, 20, 20 y h = 0,67: los m*_k son
+7, 7, 8, 13, 13, 13, media 10,167, m* = 10, I_phase1 = 15. La otra forma da 11
+e I = 16. No lo "simplifiques" de vuelta.
+
+**Por qué no se usa el mínimo.** Sería lo conservador por instinto, pero da el
+límite más ancho, y un límite más ancho avisa menos. Sería prudente frente a
+las falsas alarmas, que es el riesgo que en este método no existe, a costa de
+la detección, que es el riesgo real.
+
+**Orden de aparición.** `unique(data$Batch)` toma el orden de aparición de las
+filas. Antes, reordenar las filas cambiaba el UCL sin cambiar un solo dato.
+Hay un test que lo impide.
+
+**Verificado sobre `afm_phase1`.** El centro robusto sale en
+0,053 / 0,014 / 0,036 / 0,011 con 6 de 30 lotes contaminados. El centro clásico
+de `hotelling_classical_calibrate` sobre los mismos datos sale en
+0,167 / 0,142 / 0,157 / 0,140: 4,6 veces más lejos del cero verdadero.
+### El `sample()` de `simulate_batch_process`
+
+**El bug.** `sample(x, n)` muestrea de `1:x` cuando `x` tiene longitud 1, en
+vez de tomar el propio `x`. Es una comodidad histórica de R que se convierte
+en error en cuanto un vector se queda con un elemento. Aquí ocurría con
+`available_for_outliers`: con `prop_contam_F1 = 0.97` y `K1 = 30` quedan 29
+lotes desplazados y uno disponible, y entonces se contaminaba con atípicos un
+lote distinto del elegido, dejando las etiquetas `Status` y
+`ContaminationType` mal asignadas sin ningún aviso.
+
+**La corrección.** `x[sample.int(length(x), n)]`, que es el idioma recomendado
+en la propia ayuda de `sample`.
+
+**Comprobado que no mueve los datasets.** Con `prop_contam_F1 = 0`, que es la
+configuración de `afm_phase1`, ninguna rama previa consume el generador y
+`available_for_outliers` llega con los 30 lotes, así que las dos formas
+consumen la aleatoriedad igual. Los 24 tests de `test-data.R`, que regeneran
+los datos desde la llamada con semilla y los comparan con lo distribuido,
+siguen en verde.
+
+**La semilla del ejemplo.** `seed = 20260417` coincide con una de las dos
+semillas descartadas para el escenario del artículo por dar 10 de 10. Aquí el
+escenario es otro (K1=30 con 2 lotes con atípicos y 7% desplazados, K2 con 30%
+OOC), así que no es el mismo caso, pero el número coincide y puede confundir a
+quien lea ambas cosas.
+
+---
+
+## 9. Qué hace de verdad cada entrada inválida, medido
+
+Las guardas de validación se añadieron sobre una lista de fallos supuestos.
+Al medirlos antes de escribir el código, tres de los cuatro resultaron ser
+distintos de lo que se creía, y en dos casos peores. Se dejan aquí medidos
+porque la intuición sobre ellos ha sido errónea, y porque explican por qué
+Fase 1 y Fase 2 necesitan guardas distintas y no una compartida.
+
+### Una columna de texto no hace fallar a `covMcd`: la calibración miente
+
+Se suponía que una variable no numérica hacía fallar a `covMcd` con un mensaje
+interno de `robustbase`. **No falla en absoluto.** `data.matrix()` convierte la
+columna de texto en códigos de factor, y los niveles se ordenan
+alfabéticamente, no numéricamente. Sobre `F1_B01`:
+
+```
+Var2 real:          -0,840  -0,258   0,560   0,616   2,979
+lo que covMcd ve:        7       4      13      14      20
+```
+
+La calibración termina sin avisar y devuelve `mu_r["Var2"] = 10,32` y
+`Sw["Var2","Var2"] = 44,09`, frente a ~0,01 y ~1,4 en las columnas honestas.
+Todo finito, todo verosímil, todo falso. Es el mismo modo de fallo que motiva
+el mensaje de auto-detección de variables: un resultado creíble y equivocado,
+que es peor que un error.
+
+### El texto solo es silencioso en Fase 1, y la razón importa
+
+En Fase 2 la misma columna de texto **sí** aborta, con `'x' debe ser numérico`.
+La diferencia es qué función toca los datos: Fase 1 pasa por `covMcd`, que
+coacciona vía `data.matrix()`; Fase 2 pasa por `colMeans()`, que se niega.
+
+De ahí que las dos fases no lleven la misma guarda por simetría estética, sino
+porque fallan distinto: en Fase 1 la comprobación de tipo evita un desastre
+silencioso, y en Fase 2 solo mejora un mensaje que ya era ruidoso.
+
+### Un NA en Fase 2 no oculta un lote: destruye el recuento entero
+
+`T2` sale NA, de ahí `is_ooc` sale NA, y como el conteo es `sum(mon$is_ooc)`,
+**la suma completa sale NA en vez de un número**. No se pierde la alarma de un
+lote: se pierde el total. Ocurría por igual en las dos gemelas, robusta y
+clásica, y llegaba impreso al usuario por el camino real,
+`run_afm_mcd(compare_classical = TRUE)` → `summary()`.
+
+Este es el motivo de que la guarda de Fase 2 se aplicase a las dos gemelas,
+mientras que el rechazo de J = 1 se aplicó solo a la principal: J = 1 es una
+entrada absurda de resultado visible, y un NA aparece solo en producción con
+efecto invisible.
+
+### Un NA en Fase 1 sí lo absorbe `covMcd`
+
+Es el único de los cuatro que resultó ser **menos** grave de lo que se creía.
+Inyectando un NA en `afm_phase1`, `mu_r` sale idéntico a cuatro decimales
+(0,0535 / 0,0137 / 0,0356 / 0,0113 en ambos casos): `covMcd` lo absorbe sin
+propagarlo. La guarda se mantiene por prevención y por simetría con la gemela
+clásica, que ya la tenía, no porque hoy produzca números malos.
+
+---
+
+## 10. Deudas conocidas del paquete
+
+Cosas que están mal o incompletas a sabiendas, con la razón por la que se
+dejaron así. No son descubrimientos pendientes de investigar: están medidas y
+decididas, y lo que falta es hacerlas.
+
+### `hotelling_classical_calibrate` acepta J = 1 y su gemela no
+
+`calibrate_afm_mcd` rechaza una sola variable con un mensaje que remite a un
+gráfico de Shewhart univariante. La gemela clásica no: acepta J = 1 y devuelve
+un resultado degenerado.
+
+La asimetría es deliberada por ahora. La función clásica es la implementación
+de referencia de la Ecuación (1) del artículo, no una herramienta de
+producción, y su resultado degenerado con J = 1 es visible, no silencioso. Aun
+así queda coja, y conviene igualarla antes de publicar o documentar por qué no.
+
+### Dos mensajes de error dicen qué falló pero no qué hacer
+
+Son `"The following 'variables' are not numeric: ..."` y `"Batch 'X' contains
+non-finite values (NA/NaN/Inf)."`. Incumplen la convención que sigue el resto
+del paquete, que es decir qué hacer y no solo qué falló.
+
+Están hoy en las cuatro funciones de calibración y monitoreo porque se
+copiaron literales desde `hotelling_classical_calibrate` al añadir las guardas,
+buscando que el mismo fallo diera el mismo mensaje en los cuatro sitios.
+
+**Arreglarlos en una sola pasada sobre las cuatro, no de una en una.** El valor
+de haberlos copiado literales es precisamente la uniformidad; una corrección
+parcial deja una gemela mejor que la otra y destruye lo único que ese copiado
+compraba.
+
+### Faltan tests dedicados de dos funciones clásicas
+
+`test-hotelling_classical.R` cubre `hotelling_classical_monitor` y la
+delegación desde `run_afm_mcd`. `hotelling_classical_calibrate` y
+`hotelling_classical_ucl` no tienen tests propios: se ejercitan de rebote desde
+`test-batch_col.R` y `test-run_afm_mcd.R`, lo cual está bien para lo que esos
+archivos prueban pero no sustituye a los suyos.
+
+De las dos, la más expuesta es `hotelling_classical_ucl`, porque produce un
+ancla publicada (19,464401) y es la que menos cobertura tiene en proporción a
+lo que garantiza.
+
+### La guarda de valores no finitos vive dentro del bucle a propósito
+
+Al vectorizar los dos `monitor_*` (los T² se acumulan en vectores y el data
+frame se monta una sola vez, en vez de un `rbind` por iteración) quedó la
+tentación evidente: sacar la comprobación de finitud a una pasada previa sobre
+todo el data frame, que es más rápida y parece equivalente.
+
+**No es equivalente, y la diferencia no rompe nada visible.** El error nombra
+un lote, y con la guarda dentro del bucle ese lote es **el primero inválido en
+orden de aparición**. Una pasada previa sobre el data frame completo nombraría
+el primero por fila, que no es el mismo cuando las filas no vienen agrupadas
+por lote. El resultado sigue siendo un error correcto sobre datos inválidos;
+solo cambia cuál de los lotes malos se señala, que es justo lo que un
+ingeniero usa para ir a buscar el problema.
+
+Hay un test que lo fija reordenando las filas para que cambie el orden de
+aparición y comprobando que cambia el lote nombrado. Es el test que detecta
+esta optimización si alguien la hace por instinto.
+
+### Las dos gemelas tratan distinto el lote de una sola observación
+
+`hotelling_classical_monitor` tiene una rama para `I == 1`
+(`as.numeric(subset_batch[1, ])` en vez de `colMeans()`), y `monitor_afm_mcd`
+no la tiene.
+
+La asimetría es real y está pinada por un test, pero no está explicada en el
+código ni justificada en el artículo. Con una sola observación el T² de lote
+deja de ser el estadístico que el método define —la media de lote es la propia
+observación y no hay promediado que reduzca la varianza—, así que lo razonable
+sería que ninguna de las dos lo aceptara en silencio, no que una lo trate
+aparte. Queda pendiente decidir cuál de las dos formas es la correcta y
+alinearlas; hasta entonces, el test impide que la rama desaparezca por
+descuido al refactorizar.
+
+### `Rplots.pdf` en la raíz no es un defecto del paquete
+
+`run_examples()` lo escribe en la raíz del proyecto cuando algún ejemplo abre
+un dispositivo gráfico, y el siguiente `check()` lo marca con un NOTE:
+`Non-standard file/directory found at top level`. Se borra y se vuelve a
+comprobar. **No añadirlo a `.Rbuildignore`**, que ocultaría una señal legítima
+de `check()`.

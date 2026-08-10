@@ -8,7 +8,8 @@ hotelling_classical_monitor(
   new_data,
   calibration,
   variables,
-  batch_col = "Batch"
+  batch_col = "Batch",
+  ucl = NULL
 )
 }
 \arguments{
@@ -24,6 +25,13 @@ Must match the variables used in the calibration.}
 \item{batch_col}{Character. Name of the column that identifies the batch in
 \code{new_data}. Default \code{"Batch"}. Only what is read is renamed:
 the returned data frame always calls its first column \code{Batch}.}
+
+\item{ucl}{Optional single positive number: the Upper Control Limit to
+compare each T-squared against, normally
+\code{hotelling_classical_ucl(K, I, J)$UCL}. Pass the number itself, not
+the list returned by that function. Default \code{NULL}, in which case
+\code{is_ooc} is omitted and the output carries only the first three
+columns described below.}
 }
 \value{
 A data frame with one row per batch and columns:
@@ -31,6 +39,10 @@ A data frame with one row per batch and columns:
 \item{Batch}{Batch identifier.}
 \item{I}{Number of observations in the batch.}
 \item{T2}{Hotelling T-squared statistic for the batch.}
+\item{is_ooc}{Logical, present only when \code{ucl} was supplied. TRUE
+marks an out-of-control batch, i.e. one whose T-squared is strictly
+greater than the limit. A batch landing exactly on the limit is not
+flagged.}
 }
 }
 \description{
@@ -65,9 +77,8 @@ data(afm_phase1)
 data(afm_phase2)
 vars <- paste0("Var", 1:4)
 cal  <- hotelling_classical_calibrate(afm_phase1, vars)
-mon  <- hotelling_classical_monitor(afm_phase2, cal, vars)
-ucl        <- hotelling_classical_ucl(K = 30, I = 20, J = 4)$UCL
-mon$is_ooc <- mon$T2 > ucl
+ucl  <- hotelling_classical_ucl(K = 30, I = 20, J = 4)$UCL
+mon  <- hotelling_classical_monitor(afm_phase2, cal, vars, ucl = ucl)
 mon
 }
 \references{

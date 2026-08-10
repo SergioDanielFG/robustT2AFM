@@ -125,6 +125,54 @@ test_that("calibrate_afm_mcd validates its inputs", {
                "'verbose' must be a single logical")
 })
 
+test_that("calibrate_afm_mcd rejects a single variable and says what to do", {
+  vars <- paste0("Var", 1:4)
+
+  expect_error(calibrate_afm_mcd(afm_phase1, "Var1"),
+               "needs at least 2 process variables")
+  # El mensaje tiene que ofrecer la alternativa, no solo negarse.
+  expect_error(calibrate_afm_mcd(afm_phase1, "Var1"),
+               "Shewhart X-bar chart")
+
+  # El guardia va despues de los dos que ya existian: una columna de lote
+  # ausente o una variable inexistente siguen dando su propio error.
+  expect_error(calibrate_afm_mcd(data.frame(Var1 = 1), "Var1"),
+               "Column 'Batch' not found in 'data'")
+  expect_error(calibrate_afm_mcd(afm_phase1, "Missing"),
+               "Variable\\(s\\) not found in 'data'")
+
+  # Dos variables siguen bastando: el limite es J < 2, no J < 4.
+  expect_type(calibrate_afm_mcd(afm_phase1, vars[1:2]), "list")
+})
+
+test_that("calibrate_afm_mcd rejects a non-numeric variable instead of ranking it", {
+  vars <- paste0("Var", 1:4)
+
+  d <- afm_phase1
+  d$Var2 <- as.character(d$Var2)
+  expect_error(calibrate_afm_mcd(d, vars), "not numeric: Var2")
+
+  # Lo que se esta impidiendo: sin el guardia, data.matrix() convertia la
+  # columna de texto en codigos de factor ordenados alfabeticamente y la
+  # calibracion devolvia numeros finitos y creibles. El centro de Var2 se
+  # iba de ~0.01 a ~10.3 sin que nada avisara.
+  cal_ok <- calibrate_afm_mcd(afm_phase1, vars)
+  expect_lt(abs(cal_ok$mu_r[["Var2"]]), 1)
+})
+
+test_that("calibrate_afm_mcd rejects non-finite values naming the batch", {
+  vars <- paste0("Var", 1:4)
+
+  d <- afm_phase1
+  d$Var1[5] <- NA
+  expect_error(calibrate_afm_mcd(d, vars),
+               "Batch 'F1_B01' contains non-finite values")
+
+  d2 <- afm_phase1
+  d2$Var3[nrow(d2)] <- Inf
+  expect_error(calibrate_afm_mcd(d2, vars), "contains non-finite values")
+})
+
 test_that("calibrate_afm_mcd is silent by default and talks under verbose", {
   sim  <- simulate_batch_process(K1 = 5, K2 = 0, I = 20, J = 4,
                                  seed = 20260417)

@@ -16,8 +16,9 @@
 #' @param ucl Optional single positive number: the Upper Control Limit to
 #'   compare each T-squared against, normally \code{ucl_F_adjusted(cal, I)$UCL}.
 #'   Pass the number itself, not the list returned by
-#'   \code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case the
-#'   output has exactly the three columns described below.
+#'   \code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case
+#'   \code{is_ooc} is omitted and the output carries only the first three
+#'   columns described below.
 #' @param batch_col Character. Name of the column that identifies the batch in
 #'   \code{new_data}. Default \code{"Batch"}. This renames only what is read:
 #'   the returned data frame always calls its first column \code{Batch},
@@ -99,6 +100,11 @@ monitor_afm_mcd <- function(new_data, calibration, variables, ucl = NULL,
     stop("Number of variables (", length(variables), ") does not match ",
          "calibration mu_r dimension (", length(calibration$mu_r), ").")
   }
+  non_numeric <- variables[!vapply(new_data[variables], is.numeric, logical(1))]
+  if (length(non_numeric) > 0) {
+    stop("The following 'variables' are not numeric: ",
+         paste(non_numeric, collapse = ", "))
+  }
   if (!is.null(ucl)) {
     # El error tipico es pasar el objeto de ucl_F_adjusted() en vez de su $UCL.
     if (is.list(ucl) && !is.null(ucl$UCL)) {
@@ -133,31 +139,42 @@ monitor_afm_mcd <- function(new_data, calibration, variables, ucl = NULL,
   batches <- unique(batch_id)
 
   # --- Compute T-squared per batch ---
-  results <- data.frame(
-    Batch = character(),
-    I = integer(),
-    T2 = numeric(),
-    stringsAsFactors = FALSE
-  )
+  # Los T2 se acumulan en vectores y el data frame se monta una sola vez al
+  # final. Con rbind() dentro del bucle cada iteracion copiaba la tabla
+  # entera, y el coste crecia con el cuadrado del numero de lotes.
+  batch_labels <- as.character(batches)
+  n_batches    <- length(batch_labels)
+  I_vec        <- integer(n_batches)
+  T2_vec       <- numeric(n_batches)
 
-  for (batch in batches) {
-    subset_batch <- new_data[batch_id == batch, variables]
+  for (k in seq_len(n_batches)) {
+    batch        <- batch_labels[k]
+    subset_batch <- new_data[batch_id == batch, variables, drop = FALSE]
     I <- nrow(subset_batch)
+
+    # Sin esta guarda un solo NA propaga a T2, de ahi a is_ooc, y sum() del
+    # conteo entero sale NA: la alarma no se pierde, se pierde el recuento.
+    # Va dentro del bucle a proposito: asi el lote que se nombra en el error
+    # es el primero invalido en orden de aparicion, como antes.
+    if (any(!is.finite(as.matrix(subset_batch)))) {
+      stop("Batch '", batch, "' contains non-finite values (NA/NaN/Inf).")
+    }
 
     # Simple mean (no MCD in Phase 2)
     x_bar <- colMeans(subset_batch)
 
     # T-squared statistic
     diff <- x_bar - mu_r
-    T2 <- as.numeric(I * t(diff) %*% Sw_inv %*% diff)
-
-    results <- rbind(results, data.frame(
-      Batch = as.character(batch),
-      I = I,
-      T2 = T2,
-      stringsAsFactors = FALSE
-    ))
+    I_vec[k]  <- I
+    T2_vec[k] <- as.numeric(I * t(diff) %*% Sw_inv %*% diff)
   }
+
+  results <- data.frame(
+    Batch = batch_labels,
+    I = I_vec,
+    T2 = T2_vec,
+    stringsAsFactors = FALSE
+  )
 
   # --- Optional out-of-control flag ---
   # Estrictamente mayor: un lote justo sobre el limite no se marca.

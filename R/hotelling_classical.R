@@ -174,12 +174,22 @@ hotelling_classical_calibrate <- function(data, variables,
 #' @param batch_col Character. Name of the column that identifies the batch in
 #'   \code{new_data}. Default \code{"Batch"}. Only what is read is renamed:
 #'   the returned data frame always calls its first column \code{Batch}.
+#' @param ucl Optional single positive number: the Upper Control Limit to
+#'   compare each T-squared against, normally
+#'   \code{hotelling_classical_ucl(K, I, J)$UCL}. Pass the number itself, not
+#'   the list returned by that function. Default \code{NULL}, in which case
+#'   \code{is_ooc} is omitted and the output carries only the first three
+#'   columns described below.
 #'
 #' @return A data frame with one row per batch and columns:
 #' \describe{
 #'   \item{Batch}{Batch identifier.}
 #'   \item{I}{Number of observations in the batch.}
 #'   \item{T2}{Hotelling T-squared statistic for the batch.}
+#'   \item{is_ooc}{Logical, present only when \code{ucl} was supplied. TRUE
+#'     marks an out-of-control batch, i.e. one whose T-squared is strictly
+#'     greater than the limit. A batch landing exactly on the limit is not
+#'     flagged.}
 #' }
 #'
 #' @details
@@ -216,12 +226,11 @@ hotelling_classical_calibrate <- function(data, variables,
 #' data(afm_phase2)
 #' vars <- paste0("Var", 1:4)
 #' cal  <- hotelling_classical_calibrate(afm_phase1, vars)
-#' mon  <- hotelling_classical_monitor(afm_phase2, cal, vars)
-#' ucl        <- hotelling_classical_ucl(K = 30, I = 20, J = 4)$UCL
-#' mon$is_ooc <- mon$T2 > ucl
+#' ucl  <- hotelling_classical_ucl(K = 30, I = 20, J = 4)$UCL
+#' mon  <- hotelling_classical_monitor(afm_phase2, cal, vars, ucl = ucl)
 #' mon
 hotelling_classical_monitor <- function(new_data, calibration, variables,
-                                        batch_col = "Batch") {
+                                        batch_col = "Batch", ucl = NULL) {
 
   # --- Input validation ---
   if (!is.data.frame(new_data)) {
@@ -242,6 +251,26 @@ hotelling_classical_monitor <- function(new_data, calibration, variables,
     stop("Number of variables (", length(variables), ") does not match ",
          "calibration mu_global dimension (", length(calibration$mu_global), ").")
   }
+  non_numeric <- variables[!vapply(new_data[variables], is.numeric, logical(1))]
+  if (length(non_numeric) > 0) {
+    stop("The following 'variables' are not numeric: ",
+         paste(non_numeric, collapse = ", "))
+  }
+  if (!is.null(ucl)) {
+    # El error tipico es pasar el objeto de hotelling_classical_ucl() en vez
+    # de su $UCL.
+    if (is.list(ucl) && !is.null(ucl$UCL)) {
+      stop("'ucl' must be a single positive number, not the list returned by ",
+           "hotelling_classical_ucl(). Pass ",
+           "hotelling_classical_ucl(K, I, J)$UCL instead.")
+    }
+    if (!is.numeric(ucl) || length(ucl) != 1 || !is.finite(ucl) || ucl <= 0) {
+      stop("'ucl' must be a single positive, finite number (the control ",
+           "limit to compare each T-squared against), or NULL to omit the ",
+           "out-of-control flag. Typical use: ",
+           "hotelling_classical_ucl(K, I, J)$UCL.")
+    }
+  }
 
   # --- Setup ---
   mu_global <- calibration$mu_global
@@ -256,19 +285,27 @@ hotelling_classical_monitor <- function(new_data, calibration, variables,
   batches <- unique(batch_id)
 
   # --- Compute T-squared per batch ---
-  results <- data.frame(
-    Batch = character(),
-    I = integer(),
-    T2 = numeric(),
-    stringsAsFactors = FALSE
-  )
+  # Igual que en monitor_afm_mcd(): vectores primero, data frame una sola vez
+  # al final. El rbind() por iteracion copiaba la tabla completa cada vuelta.
+  batch_labels <- as.character(batches)
+  n_batches    <- length(batch_labels)
+  I_vec        <- integer(n_batches)
+  T2_vec       <- numeric(n_batches)
 
-  for (batch in batches) {
+  for (k in seq_len(n_batches)) {
+    batch        <- batch_labels[k]
     subset_batch <- new_data[batch_id == batch, variables, drop = FALSE]
     I <- nrow(subset_batch)
 
     if (I < 1) {
       stop("Batch '", batch, "' has zero observations.")
+    }
+
+    # Misma guarda que monitor_afm_mcd(): un NA propaga a T2, de ahi a is_ooc,
+    # y el conteo entero sale NA en vez de un numero. Dentro del bucle, para
+    # que el lote nombrado siga siendo el primero invalido por aparicion.
+    if (any(!is.finite(as.matrix(subset_batch)))) {
+      stop("Batch '", batch, "' contains non-finite values (NA/NaN/Inf).")
     }
 
     # Sample mean (no MCD: classical Hotelling)
@@ -280,14 +317,21 @@ hotelling_classical_monitor <- function(new_data, calibration, variables,
 
     # T-squared statistic
     diff <- x_bar - mu_global
-    T2 <- as.numeric(I * t(diff) %*% Sp_inv %*% diff)
+    I_vec[k]  <- I
+    T2_vec[k] <- as.numeric(I * t(diff) %*% Sp_inv %*% diff)
+  }
 
-    results <- rbind(results, data.frame(
-      Batch = as.character(batch),
-      I = I,
-      T2 = T2,
-      stringsAsFactors = FALSE
-    ))
+  results <- data.frame(
+    Batch = batch_labels,
+    I = I_vec,
+    T2 = T2_vec,
+    stringsAsFactors = FALSE
+  )
+
+  # --- Optional out-of-control flag ---
+  # Estrictamente mayor: un lote justo sobre el limite no se marca.
+  if (!is.null(ucl)) {
+    results$is_ooc <- results$T2 > ucl
   }
 
   return(results)

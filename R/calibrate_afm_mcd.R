@@ -36,16 +36,16 @@
 #'   \item{mcd_alpha}{MCD alpha parameter used (for reference).}
 #'   \item{I_phase1}{Observations per Phase 1 batch, recorded so the UCL can
 #'         detect a mismatching I. When the batches are not all the same size
-#'         this is the mean batch size, rounded; see Details.}
+#'         this is the batch size whose m* equals the mean of the per-batch
+#'         m*, which is not the mean batch size rounded; see Details.}
 #'   \item{batch_sizes}{Named integer vector with the size of every valid
 #'         Phase 1 batch, so that downstream functions can check the
 #'         equal-size assumption instead of trusting a single number.}
 #' }
 #'
 #' @details
-#' The acronym AFM comes from the original French name of the technique,
-#' \emph{Analyse Factorielle Multiple}; the English literature calls it MFA.
-#' This package keeps AFM throughout, for consistency with its own name.
+#' AFM comes from \emph{Analyse Factorielle Multiple}; the English literature
+#' calls the technique MFA. This package uses AFM throughout.
 #'
 #' The AFM inverse weighting is computed as:
 #' \deqn{w_k = (1/\lambda_{1,k}) / \sum_i (1/\lambda_{1,i})}
@@ -62,15 +62,10 @@
 #' batch. The control limit is not: \code{\link{ucl_F_adjusted}} assumes a
 #' single common batch size I, through \eqn{m^* = round(I h)}. When the Phase 1
 #' batches differ in size the function warns and sets \code{I_phase1} to the
-#' batch size whose \eqn{m^*} equals the mean of the per-batch \eqn{m^*_k}:
-#' with unequal batches the degrees of freedom of the covariance estimate are
-#' \eqn{\sum_k (m^*_k - 1)}, and equating that to the formula's
-#' \eqn{K(m^* - 1)} gives \eqn{m^* = mean(m^*_k)}. That is
-#' \code{round(mean(round(I_k * h)) / h)}, which is \strong{not} the same as
-#' rounding the mean batch size: the two disagree for roughly one calibration
-#' in five. The minimum batch size is deliberately not used: it yields the
-#' widest limit, and a wider limit signals less, which is the failure mode
-#' this method exists to avoid.
+#' batch size whose \eqn{m^*} equals the mean of the per-batch \eqn{m^*_k},
+#' that is \code{round(mean(round(I_k * h)) / h)}. This is \strong{not} the
+#' same as rounding the mean batch size: the two disagree for roughly one
+#' calibration in five.
 #'
 #' @references
 #' Abdi, H., Williams, L. J., & Valentin, D. (2013). Multiple factor analysis:
@@ -90,7 +85,8 @@
 #' data(afm_phase1)
 #' cal <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4))
 #'
-#' # The outputs a quality engineer cares about:
+#' # The reference centre lands near zero, the true process mean, even though
+#' # 6 of the 30 calibration batches carry outliers.
 #' round(cal$mu_r, 3)               # robust reference center
 #' round(cal$Sw, 3)                 # AFM-weighted covariance
 #' round(sort(cal$weights), 4)      # smallest weights = most dispersed batches
@@ -113,6 +109,21 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
                   "calibrate_afm_mcd(data, variables, batch_col = \"<name>\")")
   check_variables(data, variables, "data",
                   "calibrate_afm_mcd(data, variables = c(\"Var1\", \"Var2\"))")
+  if (length(variables) < 2) {
+    stop("The T-squared chart needs at least 2 process variables; you passed ",
+         length(variables), " ('", variables, "'). With a single variable ",
+         "there is no covariance structure to weight, and T-squared reduces ",
+         "to the square of a standardised mean. Chart that variable on its ",
+         "own with a univariate Shewhart X-bar chart, or pass the rest of ",
+         "the process variables: ",
+         "calibrate_afm_mcd(data, variables = c(\"Var1\", \"Var2\")).",
+         call. = FALSE)
+  }
+  non_numeric <- variables[!vapply(data[variables], is.numeric, logical(1))]
+  if (length(non_numeric) > 0) {
+    stop("The following 'variables' are not numeric: ",
+         paste(non_numeric, collapse = ", "))
+  }
   if (!is.numeric(mcd_alpha) || length(mcd_alpha) != 1 ||
       mcd_alpha < 0.60 || mcd_alpha > 0.90) {
     stop("mcd_alpha must be a single numeric value in [0.60, 0.90]. ",
@@ -133,11 +144,14 @@ calibrate_afm_mcd <- function(data, variables, mcd_alpha = 0.67,
   batch_sizes <- integer(0)
 
   for (batch in batches) {
-    subset_batch <- data[batch_id == batch, variables]
+    subset_batch <- data[batch_id == batch, variables, drop = FALSE]
     if (nrow(subset_batch) <= J) {
       warning("Batch '", batch, "' has too few observations (",
               nrow(subset_batch), " <= ", J, " variables). Skipping.")
       next
+    }
+    if (any(!is.finite(as.matrix(subset_batch)))) {
+      stop("Batch '", batch, "' contains non-finite values (NA/NaN/Inf).")
     }
     mcd_est <- robustbase::covMcd(subset_batch, alpha = mcd_alpha)
     mcd_centers[[as.character(batch)]] <- mcd_est$center

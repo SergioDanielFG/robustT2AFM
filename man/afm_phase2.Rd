@@ -3,7 +3,7 @@
 \docType{data}
 \name{afm_phase2}
 \alias{afm_phase2}
-\title{Phase 2 Monitoring Batches (Simulated, Half Off-Target)}
+\title{Phase 2 Monitoring Batches (Simulated, Half Faulty)}
 \format{
 A data frame with 400 rows and 8 columns:
 \describe{
@@ -26,16 +26,12 @@ Same call as \code{\link{afm_phase1}}; see that help page and
 afm_phase2
 }
 \description{
-\strong{These are simulated data, and two of their columns could not exist
-in a real process.} \code{Status} and \code{ContaminationType} record which
-batches are off-target. That is knowable here only because the data was
-generated on purpose; on a plant floor it is precisely the thing the
-control chart is being asked to find out. Do not read this data set as a
-template implying your own monitoring data should carry such a column: it
-will not, and nothing in the method needs it. The two columns exist so that
-the package can demonstrate validation against known truth, and the only
-function that consumes them is the \code{faulty} argument of
-\code{\link{plot_method_comparison}}.
+\strong{These are simulated data.} \code{Status} and
+\code{ContaminationType} are ground truth, knowable only because the data
+was generated on purpose. Real monitoring data carries neither. They exist
+so the package can demonstrate validation against known truth, through the
+\code{faulty} argument of \code{\link{plot_method_comparison}}. See
+\code{\link{afm_phase1}} for the full note.
 }
 \details{
 Twenty Phase 2 batches of 20 observations on the same 4 variables, of which
@@ -43,11 +39,10 @@ Twenty Phase 2 batches of 20 observations on the same 4 variables, of which
 configuration in Frutos-Galarza et al. (2026), and it is the monitoring set
 used by every example in the package.
 
-The examples in this package write \code{data(afm_phase2)} before using the
-object. With \code{LazyData} enabled that call is not strictly necessary,
-since the object is available as soon as the package is attached. It is
-kept because it tells the reader where the object comes from; without it
-the name would appear out of nowhere.
+The same note on \code{data()} applies here; see \code{\link{afm_phase1}}.
+
+What the two methods make of these batches is shown in the example of
+\code{\link{run_afm_mcd}}, with the caveats those counts need.
 
 To extract the ground truth for \code{plot_method_comparison}:
 \preformatted{
@@ -55,15 +50,11 @@ faulty <- as.character(unique(
   afm_phase2$Batch[afm_phase2$Status == "Faulty"]
 ))
 }
-The filter and the argument now speak the same language. They did not
-always: \code{Status} used to read "Out of Control", so the example built
-an argument called \code{faulty} by filtering on a label that named a
-chart's verdict. It taught the confusion the figures are designed to avoid.
 }
 \examples{
 data(afm_phase2)
 str(afm_phase2)
-table(afm_phase2$Status)   # 10 batches in control, 10 off-target
+table(afm_phase2$Status)   # 200 fault-free rows, 200 faulty (10 batches each)
 }
 \seealso{
 \code{\link{afm_phase1}} for the calibration batches.

@@ -1,23 +1,25 @@
-#' Parametric Upper Control Limit (UCL) for AFM-MCD using F Distribution
+#' F-Adjusted Upper Control Limit for AFM-MCD (Phase 2)
 #'
-#' Computes the Upper Control Limit for the Phase 2 Hotelling T-squared statistic
-#' using the F-distribution approach with effective sample size correction.
-#' This is the "Way 1" UCL proposed by Frutos-Galarza et al. (2026), where the
-#' effective batch size m* = round(I * h) replaces I in the degrees of freedom
-#' to account for the reduction of sample size due to MCD trimming. The
-#' Hardin-Rocke correction is NOT applied.
+#' Computes the Upper Control Limit for the Phase 2 Hotelling T-squared
+#' statistic. This is the analytic F-adjusted limit of Frutos-Galarza et al.
+#' (2026), Equation (8), where the effective batch size m* = round(I * h)
+#' replaces I in the degrees of freedom to account for the observations MCD
+#' trims from each batch.
 #'
 #' @param calibration A list returned by \code{\link{calibrate_afm_mcd}}.
 #' @param I Integer. Number of observations per batch in Phase 1 (e.g., 20).
 #' @param alpha Numeric in (0, 1). Nominal false alarm rate. Default 0.001
 #'   (European convention, in-control ARL0 = 1000), matching the value used
-#'   in Frutos-Galarza et al. (2026). Change to 0.0027 to obtain 3-sigma limits.
+#'   in Frutos-Galarza et al. (2026). Change to 0.0027 to obtain 3-sigma
+#'   limits. Not to be confused with \code{mcd_alpha} in
+#'   \code{\link{calibrate_afm_mcd}}, which is the MCD retention fraction.
 #'
 #' @return A list containing:
 #' \describe{
 #'   \item{UCL}{Upper Control Limit value.}
 #'   \item{method}{Character string: "F-adjusted (parametric)".}
-#'   \item{parameters}{Named list with J, K, I, m_star, alpha used.}
+#'   \item{parameters}{Named list with J, K, I, m_star, h, alpha, df1, df2,
+#'     scale_factor and F_quantile, so the limit can be checked by hand.}
 #' }
 #'
 #' @details
@@ -30,6 +32,16 @@
 #'   \item m* = round(I * mcd_alpha), effective batch size after MCD
 #'   \item F = F-distribution quantile
 #' }
+#'
+#' The limit is heuristic. It borrows the form of the classical Phase 2 limit
+#' and substitutes m* for I, but it is not derived from the distribution of
+#' the proposed statistic, which has no closed form: Sw is a weighted average
+#' of MCD covariances rather than a pooled sample covariance, and the weights
+#' are estimated from the data. In the simulation study of Frutos-Galarza et
+#' al. (2026) it comes out conservative: with alpha = 0.001 the measured
+#' in-control ARL0 is about 1600 rather than the nominal 1000, so alarms are
+#' rarer than the nominal rate suggests. The classical limit is conservative
+#' too, at about 1370, so most of that gap is inherited rather than introduced.
 #'
 #' @references
 #' Montgomery, D. C. (2009). Introduction to Statistical Quality Control,

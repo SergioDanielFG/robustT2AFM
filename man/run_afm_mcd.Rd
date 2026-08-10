@@ -2,9 +2,6 @@
 % Please edit documentation in R/run_afm_mcd.R
 \name{run_afm_mcd}
 \alias{run_afm_mcd}
-\alias{print.afm_mcd_study}
-\alias{summary.afm_mcd_study}
-\alias{print.summary.afm_mcd_study}
 \title{Run the Complete AFM-MCD Study in One Call}
 \usage{
 run_afm_mcd(
@@ -18,12 +15,6 @@ run_afm_mcd(
   save_path = NULL,
   batch_col = "Batch"
 )
-
-\method{print}{afm_mcd_study}(x, ...)
-
-\method{summary}{afm_mcd_study}(object, ...)
-
-\method{print}{summary.afm_mcd_study}(x, ...)
 }
 \arguments{
 \item{phase1}{A data frame of historical, in-control batches used for
@@ -49,8 +40,9 @@ Frutos-Galarza et al. (2026).}
 \item{alpha}{Numeric in (0, 1). Nominal false-alarm rate for the control
 limit. Default 0.001.}
 
-\item{plot}{Logical. If \code{TRUE} (default) the control chart is drawn on
-the active graphics device. Both plots are built and stored either way.}
+\item{plot}{Logical. If \code{TRUE} (default) the control chart is drawn
+on the active graphics device. The weights plot is always built and
+stored in \code{$weight_plot}, but never drawn automatically.}
 
 \item{compare_classical}{Logical. If \code{TRUE}, the classical
 (non-robust) Hotelling chart is computed on the same data and reported
@@ -65,13 +57,6 @@ exporting the figures. When supplied, four files are written:
 both phases. Default \code{"Batch"}, and propagated to every step. It is
 also excluded from the automatic variable detection, together with
 \code{"Phase"}.}
-
-\item{x}{An \code{afm_mcd_study} object (or, for the summary method, a
-\code{summary.afm_mcd_study} object) to print.}
-
-\item{...}{Not used; present for compatibility with the generics.}
-
-\item{object}{An \code{afm_mcd_study} object to summarise.}
 }
 \value{
 \code{run_afm_mcd} returns an object of class
@@ -89,10 +74,6 @@ also excluded from the automatic variable detection, together with
 \item{variables}{The process variables actually used.}
 \item{call}{The matched call that produced the object.}
 }
-\code{summary} returns an object of class
-\code{summary.afm_mcd_study} holding the reported quantities, so they can
-be reused programmatically. The \code{print} methods return their
-argument invisibly and are called for their console output.
 }
 \description{
 Chains the four steps of the method - Phase 1 calibration, operational

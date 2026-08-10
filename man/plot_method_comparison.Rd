@@ -87,9 +87,7 @@ batches, masking inflates the classical pooled covariance. A larger
 covariance produces a wider control limit, and a wider limit signals less
 often. The classical chart does not become nervous under contamination, it
 becomes deaf, and the failure mode to illustrate is lost detection, not
-false alarms. That sentence is the whole point of the figure and it is
-deliberately not printed under it: a caption nobody reads is worse than no
-caption, because the lines that do matter get skipped with it.
+false alarms.
 
 \strong{Colouring by truth versus by verdict.} With \code{faulty} the points
 are coloured "Faulty batch" and "Fault-free batch" under a legend titled
@@ -99,29 +97,23 @@ verdict, "Out of control" and "In control", under a legend titled "Chart
 verdict". The two pairs share no word and never appear together, and the
 legend title names which of the two the colours encode: a reader looking at
 this figure next to \code{\link{plot_control_chart}} should never have to
-wonder whether the same colour means the same thing.
-Which batches are genuinely faulty is knowable in a simulation, because we
-generate it, and in a labelled benchmark such as Tennessee Eastman, because
-the data carries it. It is never knowable on a plant floor: that is the very
-thing the chart is there to find out. Colouring by truth therefore requires
-the caller to supply the truth, and is a validation device, not a production
-one. See \code{\link{plot_control_chart}}, which never colours by truth.
+wonder whether the same colour means the same thing. Which batches are
+faulty is knowable in a simulation or a labelled benchmark, never on a
+plant floor, so colouring by truth requires the caller to supply it. See
+\code{\link{plot_control_chart}}, which never colours by truth.
 
 \strong{Disagreement versus missed detection.} The diagnostic marks report
 which batches one method signals and the other does not, which is computable
 anywhere. Only when \code{faulty} is supplied do the counts become
 detections and the wording speak of batches missed.
 
-\strong{Why \code{scale = "ratio"} is the default.} Raw statistics force
-independent vertical axes, because the robust and classical T-squared values
-are of different magnitudes, and independent axes make the panel heights
-meaningless to compare. That needs a warning, and this figure has no caption
-to put one in. Dividing each statistic by its own limit removes the need for
-the warning instead of restating it: both panels then share one scale whose
-reference line is 1.0, the axis says so, and heights are directly
-comparable. \code{scale = "T2"} reproduces the look of the published figure
-and is the one case where a caption line appears, because there the figure
-has to defend itself against its own natural reading.
+\strong{Why \code{scale = "ratio"} is the default.} The robust and
+classical T-squared values are of different magnitudes, so raw statistics
+force independent vertical axes and the panel heights stop being comparable.
+Dividing each statistic by its own limit puts both panels on one scale whose
+reference line is 1.0, and heights can then be read against each other.
+\code{scale = "T2"} reproduces the look of the published figure, on
+independent axes, and adds a caption line saying so.
 
 \strong{The near-miss band is a display device, not a verdict.} It marks
 batches whose classical statistic falls within \code{near_miss} of the limit
@@ -146,7 +138,8 @@ cal   <- calibrate_afm_mcd(afm_phase1, vars)
 ucl   <- ucl_F_adjusted(cal, I = 20)
 mon   <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
 cal_c <- hotelling_classical_calibrate(afm_phase1, vars)
-ucl_c <- hotelling_classical_ucl(K = 30, I = 20, J = 4)
+ucl_c <- hotelling_classical_ucl(K = cal_c$n_batches, I = 20,
+                                 J = length(vars))
 mon_c <- hotelling_classical_monitor(afm_phase2, cal_c, vars)
 
 plot_method_comparison(mon, mon_c, ucl$UCL, ucl_c$UCL)

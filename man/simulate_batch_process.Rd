@@ -38,22 +38,22 @@ Frutos-Galarza et al. 2026).}
 
 \item{rho}{Numeric in (-1, 1). Base correlation. Default 0.6.}
 
-\item{outlier_batches_F1}{Integer in from 0 to K1. Number of Phase 1 batches
+\item{outlier_batches_F1}{Integer from 0 to K1. Number of Phase 1 batches
 containing outlier observations. Default 0. Tests MCD robustness.}
 
-\item{outlier_rate}{Numeric in (0, 0.5). Fraction of observations within
+\item{outlier_rate}{Numeric in [0, 0.5]. Fraction of observations within
 an affected batch that are outliers. Default 0.20.}
 
 \item{outlier_shift}{Numeric. Shift magnitude (in sigmas) applied to
 outlier observations. Default 4.}
 
-\item{prop_contam_F1}{Numeric in (0, 1). Proportion of Phase 1 batches
+\item{prop_contam_F1}{Numeric in [0, 1). Proportion of Phase 1 batches
 entirely shifted. Default 0. Tests AFM weighting robustness.}
 
 \item{shift_contam}{Numeric. Shift magnitude (in sigmas) for shifted
 batches. Default 3.}
 
-\item{prop_ooc_F2}{Numeric in (0, 1). Proportion of Phase 2 batches OOC.
+\item{prop_ooc_F2}{Numeric in [0, 1). Proportion of Phase 2 batches OOC.
 Default 0.}
 
 \item{shift_ooc}{Numeric. Shift magnitude (in sigmas) for OOC batches.
@@ -108,8 +108,12 @@ sim <- simulate_batch_process(
   outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
   prop_contam_F1 = 0.07, shift_contam = 3,
   prop_ooc_F2 = 0.30,   shift_ooc = 2,
-  seed = 20260417
+  seed = 20260731
 )
 table(sim$Phase, sim$ContaminationType)   # composition by phase
-head(sim, 3)
+
+# Both contamination types in one data set: apply the method to it.
+p1 <- sim[sim$Phase == "Phase 1", ]
+p2 <- sim[sim$Phase == "Phase 2", ]
+summary(run_afm_mcd(p1, p2, paste0("Var", 1:4), plot = FALSE))
 }

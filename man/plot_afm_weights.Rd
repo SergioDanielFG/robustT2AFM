@@ -12,91 +12,62 @@ plot_afm_weights(
 )
 }
 \arguments{
-\item{calibration}{A list returned by \code{\link{calibrate_afm_mcd}}. Only
-its \code{weights} element is plotted; the object is taken whole so the
-function can check it really comes from a calibration.}
+\item{calibration}{A list returned by \code{\link{calibrate_afm_mcd}}.
+Only its \code{weights} element is plotted; the whole object is taken so
+the function can check it really comes from a calibration.}
 
 \item{title}{Character. Plot title. Default
-"AFM weights - Phase 1 calibration".}
+\code{"AFM weights - Phase 1 calibration"}.}
 
 \item{highlight_lowest}{Integer >= 0. Number of lowest-weight batches to
 draw in burgundy instead of the neutral colour, to point at specific
 batches in a report. Default 0 (every bar neutral). This is a display
-choice made by whoever calls the function, not a verdict computed by the
-package: see Details.}
+choice made by the caller, not a verdict computed by the package.}
 
-\item{save_path}{Optional character. Path stem (without extension) to which
-the chart is exported as both PNG (300 dpi) and PDF. Default \code{NULL},
-which writes nothing to disk.}
+\item{save_path}{Optional character. Path stem (without extension) to
+which the chart is exported as both PNG (300 dpi) and PDF. Default
+\code{NULL}, which writes nothing to disk.}
 }
 \value{
-A \code{ggplot} object. The plot is also drawn on the active
-graphics device.
+A ggplot object.
 }
 \description{
-Draws the AFM inverse weights produced by \code{\link{calibrate_afm_mcd}},
-one horizontal bar per Phase 1 batch, sorted from the smallest weight at
-the top to the largest at the bottom, with the uniform weight 1/K marked as
-a dashed vertical reference line. Reading the chart from the top down gives
-the calibration batches in decreasing order of internal dispersion, which
-is the order in which they are worth inspecting.
+One horizontal bar per Phase 1 batch, sorted by AFM weight, smallest at
+the top. The dashed line is the average weight, 1/K.
 }
 \details{
-\strong{What a low weight means, and what it does not.} The AFM weight of
-batch k is \eqn{w_k = (1/\lambda_{1,k}) / \sum_i (1/\lambda_{1,i})}, where
-\eqn{\lambda_{1,k}} is the first eigenvalue of the MCD covariance of that
-batch. It therefore measures the batch's \emph{internal dispersion}, and
-nothing else. A low weight says "this batch is more spread out than its
-neighbours". It does \strong{not} say the batch is off-target, and it does
-\strong{not} say the batch is contaminated: a batch shifted bodily away
-from the others without any change in shape keeps its weight unchanged.
-The weighting protects the reference covariance Sw; it does not protect the
-reference centre mu_r. Which batches were actually contaminated is ground
-truth, available in a simulation study and never in production, so the
-package does not colour the bars by it.
+A low weight means the batch is more spread out than the others. It does
+not mean the batch is off-target, and it does not mean it is contaminated:
+a batch shifted bodily away from the rest keeps its weight. The weighting
+protects the reference covariance \code{Sw}, not the reference centre
+\code{mu_r}.
 
-\strong{Why the bars are not coloured by the 1/K line.} The weights sum to
-1, so their mean is exactly 1/K by construction, while the distribution of
-\eqn{1/\lambda_1} is skewed to the right. More than half the batches
-therefore fall below 1/K even when Phase 1 is perfectly clean, and colouring
-by that threshold would paint half of a healthy calibration as suspect. The
-reference line is drawn so the spread can be judged against it; the
-colouring is left to \code{highlight_lowest}, which the caller sets
-deliberately.
-
-\strong{On the colour of the reference line.} It is slate here, not the
-burgundy used for the limit line in \code{\link{plot_control_chart}} and
-\code{\link{plot_method_comparison}}, and the difference is deliberate.
-There the line is a limit: crossing it raises an alarm. Here 1/K is not a
-limit, and crossing it means nothing at all - see the paragraph above on
-why more than half the batches fall below it even when Phase 1 is clean.
-Burgundy would imply a threshold that does not exist.
-
-The batch identifiers are placed on the y axis rather than the x axis so
-that they stay horizontal and legible with the K = 30 calibration batches
-used in Frutos-Galarza et al. (2026). Sorting by weight already discards
-the run order, so nothing is lost by transposing the axes.
+More than half the batches fall below 1/K even when Phase 1 is clean,
+because the weights average to 1/K by construction and their distribution
+is skewed to the right. That is why the bars are not coloured by that
+line. Use \code{highlight_lowest} to point at specific batches.
 }
 \examples{
 data(afm_phase1)
 cal <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4))
 
-# Every bar neutral; the dashed line is the uniform weight 1/K.
+# Every bar neutral; the dashed line is the average weight 1/K.
 plot_afm_weights(cal)
 
-# Point at the six most dispersed batches for a report. With this seed,
-# four of those six are batches that really do carry outliers, and two
-# are clean: the weight ranks dispersion, it does not classify batches.
+# Point at the six most dispersed batches for a report. Four of those six
+# carry outliers and two are clean, and two contaminated batches sit
+# outside the six: the weight ranks dispersion, it does not classify.
 plot_afm_weights(cal, highlight_lowest = 6)
 
 # Save at publication dimensions (PNG 300 dpi + PDF):
 # plot_afm_weights(cal, save_path = file.path(tempdir(), "afm_weights"))
+
 }
 \references{
-Abdi, H., Williams, L. J., & Valentin, D. (2013). Multiple factor analysis:
-principal component analysis for multitable and multiblock data sets.
-\emph{Wiley Interdisciplinary Reviews: Computational Statistics}, 5(2),
-149-179. \doi{10.1002/wics.1246}
+Abdi, H., Williams, L. J., & Valentin, D. (2013). Multiple factor
+analysis: principal component analysis for multitable and multiblock data
+sets. \emph{Wiley Interdisciplinary Reviews: Computational Statistics},
+5(2), 149-179. \doi{10.1002/wics.1246}
 
 Wickham, H. (2016). \emph{ggplot2: Elegant Graphics for Data Analysis}
 (2nd ed.). Springer.

@@ -25,8 +25,9 @@ Must match the variables used in the calibration.}
 \item{ucl}{Optional single positive number: the Upper Control Limit to
 compare each T-squared against, normally \code{ucl_F_adjusted(cal, I)$UCL}.
 Pass the number itself, not the list returned by
-\code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case the
-output has exactly the three columns described below.}
+\code{\link{ucl_F_adjusted}}. Default \code{NULL}, in which case
+\code{is_ooc} is omitted and the output carries only the first three
+columns described below.}
 
 \item{batch_col}{Character. Name of the column that identifies the batch in
 \code{new_data}. Default \code{"Batch"}. This renames only what is read:

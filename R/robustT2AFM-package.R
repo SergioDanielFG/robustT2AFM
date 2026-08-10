@@ -52,6 +52,15 @@
 #' there: there is no decomposition of the statistic across variables, so
 #' after an alarm the next step is still yours.
 #'
+#' And it protects the reference covariance further than it protects the
+#' reference centre. The AFM weights act on dispersion, not on position, so a
+#' calibration batch that is wholly displaced keeps its weight. On the
+#' Tennessee Eastman data of Frutos-Galarza et al. (2026) a mild displacement
+#' moved the centre by 0.06 standard deviations and monitoring was unaffected;
+#' a severe one moved it by 0.82 and six of ten fault-free batches then
+#' crossed the limit. Calibrate on batches you have reason to believe were on
+#' target.
+#'
 #' @references
 #' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
 #' Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart

@@ -13,17 +13,17 @@
 #' @param mu Numeric vector of length J. Default zero vector.
 #' @param Sigma Covariance matrix J x J. If NULL, equicorrelation with correlation rho.
 #' @param rho Numeric in (-1, 1). Base correlation. Default 0.6.
-#' @param outlier_batches_F1 Integer in from 0 to K1. Number of Phase 1 batches
+#' @param outlier_batches_F1 Integer from 0 to K1. Number of Phase 1 batches
 #'   containing outlier observations. Default 0. Tests MCD robustness.
-#' @param outlier_rate Numeric in (0, 0.5). Fraction of observations within
+#' @param outlier_rate Numeric in \[0, 0.5\]. Fraction of observations within
 #'   an affected batch that are outliers. Default 0.20.
 #' @param outlier_shift Numeric. Shift magnitude (in sigmas) applied to
 #'   outlier observations. Default 4.
-#' @param prop_contam_F1 Numeric in (0, 1). Proportion of Phase 1 batches
+#' @param prop_contam_F1 Numeric in \[0, 1). Proportion of Phase 1 batches
 #'   entirely shifted. Default 0. Tests AFM weighting robustness.
 #' @param shift_contam Numeric. Shift magnitude (in sigmas) for shifted
 #'   batches. Default 3.
-#' @param prop_ooc_F2 Numeric in (0, 1). Proportion of Phase 2 batches OOC.
+#' @param prop_ooc_F2 Numeric in \[0, 1). Proportion of Phase 2 batches OOC.
 #'   Default 0.
 #' @param shift_ooc Numeric. Shift magnitude (in sigmas) for OOC batches.
 #'   Default 2.
@@ -72,10 +72,14 @@
 #'   outlier_batches_F1 = 2, outlier_rate = 0.20, outlier_shift = 4,
 #'   prop_contam_F1 = 0.07, shift_contam = 3,
 #'   prop_ooc_F2 = 0.30,   shift_ooc = 2,
-#'   seed = 20260417
+#'   seed = 20260731
 #' )
 #' table(sim$Phase, sim$ContaminationType)   # composition by phase
-#' head(sim, 3)
+#'
+#' # Both contamination types in one data set: apply the method to it.
+#' p1 <- sim[sim$Phase == "Phase 1", ]
+#' p2 <- sim[sim$Phase == "Phase 2", ]
+#' summary(run_afm_mcd(p1, p2, paste0("Var", 1:4), plot = FALSE))
 simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
                                    mu = NULL, Sigma = NULL, rho = 0.6,
                                    outlier_batches_F1 = 0,
@@ -123,6 +127,28 @@ simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
          "provided: ", prop_ooc_F2, ".", call. = FALSE)
   }
 
+  if (!is.null(rho) && (!is.numeric(rho) || length(rho) != 1 ||
+                        !is.finite(rho) || rho <= -1 || rho >= 1)) {
+    stop("'rho' is the base correlation between variables, so it must be a ",
+         "single number in (-1, 1). You provided: ", rho, ".", call. = FALSE)
+  }
+  if (!is.null(Sigma)) {
+    if (!is.matrix(Sigma) || nrow(Sigma) != J || ncol(Sigma) != J) {
+      stop("'Sigma' must be a J x J matrix, with J = ", J, ".", call. = FALSE)
+    }
+    if (!isTRUE(all.equal(Sigma, t(Sigma)))) {
+      stop("'Sigma' must be symmetric.", call. = FALSE)
+    }
+    if (any(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values <= 0)) {
+      stop("'Sigma' must be positive definite: all its eigenvalues must be ",
+           "greater than zero.", call. = FALSE)
+    }
+  }
+  if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1 ||
+                         seed != round(seed))) {
+    stop("'seed' must be a single whole number, or NULL.", call. = FALSE)
+  }
+
   if (!is.null(seed)) set.seed(seed)
 
   # --- Default mu and Sigma ---
@@ -145,8 +171,12 @@ simulate_batch_process <- function(K1 = 30, K2 = 20, I = 20, J = 4,
 
   # Outlier batches: from those NOT already shifted
   available_for_outliers <- setdiff(seq_len(K1), shifted_batches_F1)
+  # sample(x, n) muestrea de 1:x cuando x tiene longitud 1, no de x. Con
+  # prop_contam_F1 alto puede quedar un solo lote disponible, y entonces se
+  # contaminaria un lote distinto del elegido, sin aviso.
   outlier_batches_actual <- if (outlier_batches_F1 > 0 && length(available_for_outliers) > 0) {
-    sample(available_for_outliers, min(outlier_batches_F1, length(available_for_outliers)))
+    n_take <- min(outlier_batches_F1, length(available_for_outliers))
+    available_for_outliers[sample.int(length(available_for_outliers), n_take)]
   } else integer(0)
 
   n_ooc_F2 <- round(K2 * prop_ooc_F2)
