@@ -10,15 +10,29 @@ chart for batch manufacturing. The method combines:
 - Minimum Covariance Determinant (MCD) estimation per batch
 - Multiple Factor Analysis (AFM) weighting of batch covariances (w = 1/lambda1)
 - Parametric F-adjusted upper control limit (`ucl_F_adjusted`) computed with
-  the effective batch size m* = round(I * h). This is the sole UCL exposed
-  by the package; the paper discussed a bootstrap alternative only to
-  discard it, so it is not implemented here
+  the effective batch size m* = round(I * h). The paper discussed a bootstrap
+  alternative only to discard it, so it is not implemented here. The classical
+  Hotelling limit is also available, through `hotelling_classical_ucl()`, as
+  the non-robust benchmark.
 - Publication-quality control chart with out-of-control batches highlighted
   and labelled for quality engineers, and one-line export to PNG + PDF
 
 The method preserves sensitivity to mean shifts when Phase I calibration
 data contains outlier contamination - a scenario where classical Hotelling
 T-squared suffers from masking effects.
+
+## Scope
+
+The chart detects shifts of the mean vector. Changes in the covariance
+structure require different statistics and are out of scope.
+
+The AFM weights protect the reference covariance further than they protect
+the reference centre: they act on dispersion, not on position, so a
+calibration batch that is wholly displaced keeps its weight. On the Tennessee
+Eastman data a mild displacement moved the centre by 0.06 standard deviations
+and monitoring was unaffected; a severe one moved it by 0.82 and six of ten
+fault-free batches then crossed the limit. Calibrate on batches you have
+reason to believe were on target.
 
 ## Minimum workflow
 
@@ -27,7 +41,7 @@ library(robustT2AFM)
 
 # The base configuration of the paper ships with the package: 6 of the
 # 30 Phase 1 batches carry outlying observations, and half the Phase 2
-# batches are off-target by 1 sigma.
+# batches are faulty, shifted by 1 sigma.
 data(afm_phase1)
 data(afm_phase2)
 
