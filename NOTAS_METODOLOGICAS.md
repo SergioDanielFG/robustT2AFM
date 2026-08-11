@@ -699,6 +699,26 @@ aparte. Queda pendiente decidir cuál de las dos formas es la correcta y
 alinearlas; hasta entonces, el test impide que la rama desaparezca por
 descuido al refactorizar.
 
+### El límite clásico no se mueve con la contaminación de Fase 1
+
+`hotelling_classical_ucl()` es paramétrico y solo depende de K, I, J y alpha:
+da 19.4644 con Fase 1 limpia y con Fase 1 contaminada. Lo que cambia es el
+estadístico. Sobre `afm_phase2`, el T² de `F2_B01` pasa de 39.19 con
+calibración limpia a 16.92 con la contaminada, y las alarmas de 9 de 20 a
+2 de 20, contra el mismo límite.
+
+**Qué corrige esto.** La viñeta y `CLAUDE.md` decían que la contaminación
+«infla el UCL» y que «un límite más ancho avisa menos». La conclusión era
+correcta —menos alarmas, sordera y no nerviosismo— pero el mecanismo estaba
+mal, y era comprobable en falso por cualquier lector en una línea. La cadena
+correcta es: la contaminación infla Sp, un Sp inflado encoge todos los T² a la
+vez, y estadísticos encogidos no alcanzan un límite que no se ha movido.
+
+Geométricamente sí es cierto que el elipsoide de aceptación en el espacio de
+los datos se ensancha, así que la intuición laxa no era absurda; pero lo que
+ambos textos afirmaban era del **UCL**, que es un número concreto que no
+cambia.
+
 ### `Rplots.pdf` en la raíz no es un defecto del paquete
 
 `run_examples()` lo escribe en la raíz del proyecto cuando algún ejemplo abre

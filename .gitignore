@@ -10,8 +10,6 @@ revdep/
 .idea/
 *.log
 *~
-.positai
-.claude/
 
 # Paper-artifact guards (folder-specific, not global *.csv)
 /resultados_*/
@@ -19,9 +17,5 @@ revdep/
 /_smoke_output/
 /dataset_*.rds
 /*-MacBook*.Rproj
-
-# Herramientas locales, no forman parte del paquete
-CLAUDE.md
-.claude/
-.positai/
-.Rhistory
+/doc/
+/Meta/

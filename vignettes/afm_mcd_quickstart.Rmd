@@ -58,8 +58,13 @@ study$chart
 Classical Hotelling T-squared assumes the Phase 1 calibration batches are
 in control. In practice, one or two historical batches almost always
 carry within-batch outliers or a shifted mean. Those pollute the pooled
-covariance matrix S_p, which then inflates the UCL. The chart looks
-"quiet" but the increased UCL is masking real Phase 2 alarms.
+covariance matrix `Sp`. The control limit itself does not move:
+`hotelling_classical_ucl()` is parametric and never sees `Sp`. What
+moves is the statistic. Since T-squared divides by `Sp`, an inflated
+`Sp` shrinks every distance at once, and batches that would have
+crossed a fixed limit no longer reach it. On this data the classical
+chart flags 9 of 20 when Phase 1 is clean and 2 when it is
+contaminated, against the same limit of 19.4644.
 
 The AFM-MCD chart absorbs this contamination at calibration time:
 
@@ -94,27 +99,21 @@ not need them: which batches are out of control is the question the
 chart answers, not an input it requires. Use
 `simulate_batch_process()` if you want a different scenario.
 
-Classical Hotelling (baseline):
+Both charts on the same batches, in the same order, each against its
+own limit:
 
-```{r classical}
+```{r comparison, fig.height=4.5}
 cal_c <- hotelling_classical_calibrate(phase1, vars)
-mon_c <- hotelling_classical_monitor(phase2, cal_c, vars)
 ucl_c <- hotelling_classical_ucl(K = 30, I = 20, J = 4)
-plot_control_chart(
-  mon_c, UCL = ucl_c$UCL, alpha = ucl_c$parameters$alpha,
-  method_label = "Classical Hotelling T-squared - Phase 2"
-)
-```
+mon_c <- hotelling_classical_monitor(phase2, cal_c, vars, ucl = ucl_c$UCL)
 
-AFM-MCD (this package):
-
-```{r afm-mcd}
 cal_r <- calibrate_afm_mcd(phase1, vars)
 ucl_r <- ucl_F_adjusted(cal_r, I = 20)
-mon_r <- monitor_afm_mcd(phase2, cal_r, vars)
-plot_control_chart(
-  mon_r, UCL = ucl_r$UCL, alpha = ucl_r$parameters$alpha,
-  method_label = "AFM-MCD Robust T-squared - Phase 2"
+mon_r <- monitor_afm_mcd(phase2, cal_r, vars, ucl = ucl_r$UCL)
+
+plot_method_comparison(
+  robust = mon_r, UCL_robust = ucl_r$UCL,
+  classical = mon_c, UCL_classical = ucl_c$UCL
 )
 ```
 
@@ -122,6 +121,10 @@ The two Phase 2 datasets are identical. With this seed the AFM-MCD
 chart flags 8 of the 10 off-target batches and the classical chart
 flags 2, and neither raises a false alarm on the 10 in-control
 batches.
+
+The ninth is F2_B14, a genuinely faulty batch at 0.97 of the limit.
+The count is 8 of 10, and the one that got away was three per cent
+short of firing.
 
 Three cautions about those counts, so they are not over-read:
 
@@ -181,7 +184,7 @@ plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
 - **UCL label** ("UCL = 19.7  (alpha = 0.001)"): the limit itself and
   the nominal false-alarm rate, so anyone reading the report knows the
   chart's ARL0.
-- **Red batch labels** (e.g. `F2_B07`): the batches to investigate.
+- **Red batch labels** (e.g. `F2_B12`): the batches to investigate.
   Pull their raw records, check the process log around that time
   (materials, operator, equipment), and if the shift persists across
   successive batches, escalate.
