@@ -483,3 +483,88 @@ Injecting an NA into `afm_phase1`, `mu_r` comes out identical to four decimals
 propagating. The guard is kept as a precaution and for symmetry with the
 classical twin, which already had one, not because it currently produces bad
 numbers.
+
+
+---
+
+## 8. Known debts
+
+Things that are wrong or incomplete on purpose, with the reason they were left
+that way. These are not open questions awaiting investigation: they have been
+measured and decided, and what remains is to do them.
+
+None of them changes a number in the paper or affects the reproducibility of its
+tables.
+
+### `hotelling_classical_calibrate` accepts J = 1 and its twin does not
+
+`calibrate_afm_mcd` rejects a single variable with a message pointing the user
+towards a univariate Shewhart chart. The classical twin does not: it accepts
+J = 1 and returns a degenerate result.
+
+The asymmetry is deliberate for now. The classical function is the reference
+implementation of Equation (1) of the paper, not a production tool, and its
+degenerate result with J = 1 is visible rather than silent. It is still lopsided,
+and the two should either be aligned or the reason documented.
+
+### Two error messages say what failed but not what to do
+
+They are `"The following 'variables' are not numeric: ..."` and `"Batch 'X'
+contains non-finite values (NA/NaN/Inf)."`. They break the convention the rest of
+the package follows, which is to say what to do and not only what failed.
+
+They sit in all four calibration and monitoring functions because they were
+copied verbatim from `hotelling_classical_calibrate` when the guards were added,
+so that the same failure would produce the same message in all four places.
+
+**Fix them in a single pass across all four, not one at a time.** The value of
+having copied them verbatim is precisely that uniformity; a partial fix leaves
+one twin better than the other and destroys the only thing that copying bought.
+
+### Two classical functions have no dedicated tests
+
+`test-hotelling_classical.R` covers `hotelling_classical_monitor` and the
+delegation from `run_afm_mcd`. `hotelling_classical_calibrate` and
+`hotelling_classical_ucl` have no tests of their own: they are exercised
+indirectly from `test-batch_col.R` and `test-run_afm_mcd.R`, which is fine for
+what those files are testing but is no substitute.
+
+Of the two, the more exposed is `hotelling_classical_ucl`, because it produces a
+published anchor (19.46440) and has the least coverage relative to what it
+guarantees.
+
+### The non-finite guard lives inside the loop on purpose
+
+When the two `monitor_*` functions were vectorised — the T² values accumulate in
+vectors and the data frame is assembled once, instead of an `rbind` per iteration
+— an obvious temptation appeared: lift the finiteness check into a single pass
+over the whole data frame, which is faster and looks equivalent.
+
+**It is not equivalent, and the difference breaks nothing visible.** The error
+names a batch, and with the guard inside the loop that batch is **the first
+invalid one in order of appearance**. A prior pass over the whole data frame
+would name the first by row, which is not the same batch when the rows do not
+arrive grouped by batch. The result is still a correct error on invalid data;
+only which of the bad batches gets named changes, and that is exactly what an
+engineer uses to go and find the problem.
+
+A test pins this by reordering the rows so that order of appearance changes, and
+checking that the named batch changes with it. That is the test which catches
+this optimisation if anyone makes it on instinct.
+
+### The two twins treat a single-observation batch differently
+
+`hotelling_classical_monitor` has a branch for `I == 1`
+(`as.numeric(subset_batch[1, ])` instead of `colMeans()`), and `monitor_afm_mcd`
+does not.
+
+The asymmetry is real and pinned by a test, but it is neither explained in the
+code nor justified in the paper. With a single observation the batch T² stops
+being the statistic the method defines — the batch mean is the observation itself
+and there is no averaging to reduce the variance — so the reasonable outcome is
+that neither function should accept it silently, rather than one handling it
+separately. Which of the two forms is correct remains to be decided; until then,
+the test prevents the branch from disappearing through carelessness during
+refactoring.
+
+### `Rplots.pdf`
