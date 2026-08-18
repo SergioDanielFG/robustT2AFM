@@ -69,3 +69,178 @@ over again.
 
 This is what `plot_method_comparison()` exists for, and why its caption opens
 with the mechanism rather than with a count.
+
+
+---
+
+## 2. Colouring by truth and colouring by verdict
+
+Figure 6 of the paper colours batches by **truth**: fault-free against faulty.
+That choice is what makes the argument visible, and it is legitimate because the
+Tennessee Eastman collection **comes labelled** — we know which batches carry a
+fault because the dataset says so. The resulting image is the whole argument:
+twenty red points, nearly all of them below the limit in the classical panel.
+Batches known to be defective, and a chart that says nothing.
+
+A control chart in production cannot colour this way, and not for a technical
+reason: **which batches carry a fault is precisely what we are trying to find
+out**. If that information were available, the chart would be redundant.
+
+Hence the rule the package follows:
+
+- `plot_control_chart()` always colours by **verdict** — above or below the
+  limit — and never uses contamination labels. This is the production chart.
+- `plot_method_comparison()` colours by **truth** only when the caller supplies
+  that truth, through the `faulty` argument. Without it, it falls back to
+  colouring by verdict. Asking for truth colouring without supplying the truth
+  is an error, not a silent default.
+
+Colouring by truth is an instrument of **validation**, not of operation. It
+serves to show why one method detects and another does not, on data where the
+answer is known in advance. It is not a way to monitor a process.
+
+Historical note: for a while the package could not reproduce its own Figure 6,
+because the only chart function coloured by verdict by design and the published
+figure came out of an external script. `plot_method_comparison()` with `faulty`
+closes that gap without relaxing the rule above.
+
+---
+
+## 3. The vocabulary: two pairs, and why there are two
+
+The paper uses two pairs of terms, and it is right to do so, because they name
+two different things: "out of control" is what **the chart says**, and "faulty
+batch" is what **the batch is**. Verdict against truth, which is the same
+distinction that underpins the design of the charts in section 2.
+
+The problem was never having two pairs. It was having five ways of saying them.
+The package fixes these:
+
+| Idea | Pair | Legend title |
+|---|---|---|
+| Chart's verdict | **Out of control / In control** | `Chart verdict` |
+| Batch's condition | **Faulty batch / Fault-free batch** | `Batch condition` |
+
+**Why "in control" and not "under control".** *Under control* is a calque from
+Spanish. The statistical process control literature says *in control* and *out
+of control*, without exception in Montgomery. The package console already said
+"out of control" and "in control" in `print` and `summary`, so this choice
+required no rewriting.
+
+**Why "fault-free" and not "normal".** *Batch under normal conditions*
+translates naturally as *normal batch*, and in this particular paper that is an
+expensive ambiguity: the text is full of normal distributions. *Fault-free* is
+the exact complement of *faulty*, contains no form of the word *control*, and
+describes exactly what happens in the Tennessee Eastman data, where a batch
+either carries an injected fault or it does not.
+
+**Why the two pairs can coexist.** Three conditions, and all three hold. They
+never appear in the same legend, because the colour encodes one thing or the
+other and never both. They share no discriminating word, only the noun *batch*.
+And the legend title names which of the two is being shown. That third condition
+is what really settles it: a reader who sees two figures in a row does not have
+to wonder whether the same colour means the same thing, because the legend says
+so.
+
+### The third level: the `Status` column of the datasets
+
+The same decision had to be applied one level down. `simulate_batch_process()`
+was generating the `Status` column with the values "Under Control" and "Out of
+Control", and that column is **ground truth**, not a verdict: it records which
+batches were generated with a fault.
+
+The symptom was the documentation example, which built the `faulty` argument
+like this:
+
+```r
+faulty <- afm_phase2$Batch[afm_phase2$Status == "Out of Control"]
+```
+
+An argument named `faulty`, which is truth, filtered by a label that names a
+verdict. The example was teaching exactly the confusion the figures had just
+removed.
+
+`Status` therefore became **`Faulty` / `Fault-free`**, the same pair as the truth
+legend. This was done **before the data were published**, and that timing
+matters: once the `.rda` files are on Zenodo or CRAN, changing the values of a
+column breaks the code of anyone already using them.
+
+Verified by regenerating from the same seed: **columns `Var1` to `Var4` are
+byte-identical** — `identical()` on the serialised objects, maximum difference
+zero — the batch identifier does not move, and the three anchors still come out
+at 19.69285, 13 and 19.46440, with a maximum T² of 44.8193. This was a change of
+labels, not of data.
+
+The same pass settled `ContaminationType`, which carried the level `OOC` in
+Phase 2 — the same verdict jargon, one level down. It became **`Shifted`**, the
+name Phase 1 already used, leaving the levels as
+`Clean | Outliers | Shifted`.
+
+The reason is that **it is literally the same line of code**: Phase 1 does
+`mu + shift_contam * sigma_vec` and Phase 2 does `mu + shift_ooc * sigma_vec`,
+and both go on to the same `gen_batch(I, mu_k, Sigma)`. Same mean shift, same
+covariance; only the magnitude differs, and magnitude is a parameter, not a
+category.
+
+There is a real difference between the two cases, but it is one of role rather
+than of mechanism: in Phase 1 a shifted batch is contamination the method must
+absorb, and in Phase 2 it is the signal the method must detect. That role is
+determined entirely by the `Phase` column, so encoding it again in
+`ContaminationType` was duplicating information — and duplicating it under two
+different words invited the reader to believe they were two phenomena.
+
+Each column now answers exactly one question: `ContaminationType` how the batch
+was spoiled, `Phase` where it sits, `Status` whether it carries a fault.
+
+### Carried over into the translation of the paper
+
+Figure 6 is currently labelled "In-control batch" / "Faulty batch". In the
+English manuscript **that legend must become "Fault-free batch" / "Faulty
+batch"**, not the literal translation.
+
+The reason: Figure 6 colours by **truth**, and "in-control batch" would use for
+truth the same phrase the rest of the paper uses for the **verdict**. One phrase
+would name two different things in adjacent figures, which is exactly the
+confusion the split vocabulary avoids. It is a two-word change and an easy one
+to lose in translation, which is why it is recorded here.
+
+---
+
+## 4. Why the AFM weight plot does not colour by the 1/K line
+
+`plot_afm_weights()` draws the reference at the uniform weight `1/K` but does
+not colour the bars according to whether they fall below or above it. The
+temptation is obvious and the reason to resist it is arithmetic.
+
+The AFM weights are inverse and normalised:
+
+
+They sum to one by construction, so their mean is exactly `1/K`. And the
+distribution of `1/lambda1` is right-skewed, so its median sits below its mean.
+The consequence: **more than half the batches fall below `1/K` even with a
+clean Phase 1**.
+
+Measured on the package scenarios with K = 30: with 2 genuinely contaminated
+batches, **17 of 30** fall below `1/K`; with 6 contaminated batches, also **17
+of 30**. Colouring by that threshold would paint more than half of a sound
+calibration as suspect, and would communicate something false with a great deal
+of confidence.
+
+The bars are therefore drawn in a neutral colour, and emphasis is left to the
+caller through `highlight_lowest`, which is a presentation choice rather than a
+judgement made by the package.
+
+**And this is why its reference line is not the alarm colour.** In both control
+charts the line is a **limit**: crossing it raises an alarm, and the dark red
+`#A02D31` is the alarm colour throughout the package. Here `1/K` **is not a
+limit**: crossing it means nothing, as the 17 of 30 just showed. It is drawn in
+slate `#2C3E50` to say that it is a reference and not a threshold. The two
+colours distinguish two kinds of line; it is not an oversight, and it is written
+in the `@details` of all three functions.
+
+It is worth restating what the weight measures: internal dispersion, through the
+first eigenvalue. It does not measure position. A batch translated as a whole,
+with its shape unchanged, keeps its weight intact. The weighting protects `Sw`;
+it does not protect the reference center `mu_r`. In the base scenario, of the six
+lowest weights four belong to batches that do carry outliers and two to clean
+batches: the weight ranks dispersion, it does not classify batches.
