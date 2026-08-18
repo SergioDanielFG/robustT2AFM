@@ -1,0 +1,3 @@
+"config","contam_pct","TPR_Hot","SE_Hot","TPR_Rob","SE_Rob","Advantage"
+"contam=30%",30,0.0761,0.0011,0.8115,0.0029,0.7354
+"contam=40%",40,0.0178,4e-04,0.7608,0.0035,0.7431

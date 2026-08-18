@@ -1,0 +1,3 @@
+"method","n_compositions","det_mean","det_sd","det_se","det_min","det_max","fa_mean","fa_min","fa_max","UCL"
+"Propuesto (AFM-MCD)",20,19.95,0.223606797749979,0.05,19,20,0,0,0,19.6928514338751
+"Clasico (Hotelling)",20,1.4,1.31389337066357,0.293795489199008,0,5,0,0,0,19.4644013422106

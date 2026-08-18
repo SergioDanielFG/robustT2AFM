@@ -1,0 +1,5 @@
+"Limit","FAR","SE_FAR","ARL0","FA_total","n_batches"
+"F analitico (actual)",0.000625,5.55088111389267e-05,1600,125,2e+05
+"Bootstrap subconjunto MCD (centrado, escala corregida)",1e-05,7.06929893933952e-06,1e+05,2,2e+05
+"Bootstrap lote completo (centrado)",5e-06,5e-06,2e+05,1,2e+05
+"Bootstrap ponderado por w_k (centrado)",5e-06,5e-06,2e+05,1,2e+05
