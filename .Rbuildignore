@@ -25,3 +25,5 @@
 ^dataset_.*\.rds$
 ^.*-MacBook Pro.*
 ^REPRODUCIBILITY\.md$
+^DESIGN_DECISIONS\.md$
+^DESIGN_DECISIONS\.md$
