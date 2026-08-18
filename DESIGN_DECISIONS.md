@@ -244,3 +244,242 @@ with its shape unchanged, keeps its weight intact. The weighting protects `Sw`;
 it does not protect the reference center `mu_r`. In the base scenario, of the six
 lowest weights four belong to batches that do carry outliers and two to clean
 batches: the weight ranks dispersion, it does not classify batches.
+
+
+---
+
+## 5. Phase 1 batches of unequal size
+
+The control limit assumes a common batch size I, through `m* = round(I·h)`. The
+calibration itself does not need one: MCD, the weights, `Sw` and `mu_r` are all
+computed batch by batch and handle different sizes without difficulty. The limit
+does need one.
+
+In plant data unequal batches are the norm — one run stops early, another loses
+discarded measurements. When that happens there is no exact I, and one has to be
+chosen.
+
+**The size chosen is the one whose `m*` equals the mean of the `m*_k`.** With
+unequal batches the actual degrees of freedom of the covariance estimator are
+`sum_k (m*_k - 1)`; setting that equal to the `K(m* - 1)` of the published
+formula gives `m* = mean(m*_k)`, and hence:
+
+
+**This is not the same as rounding the mean of the sizes.** The two are easy to
+confuse and they genuinely differ:
+
+- `mean(round(I_k · h))` is the one that follows from the degrees of freedom.
+- `round(mean(I_k) · h)` is the one that comes from averaging sizes first and
+  converting afterwards.
+
+Over 20,000 random vectors of 30 sizes between 10 and 25, the two disagree in
+**18.6%** of cases. A worked example that can be checked by hand, with h = 0.67
+and sizes 11, 11, 12, 20, 20, 20:
+
+
+In the worst divergence found (30 batches between 10 and 25) `m*` shifts from 11
+to 12 and the UCL from 19.81864 to 19.74987, a difference of 0.347%. With equal
+batches the two forms always agree, so nothing already measured moves.
+
+The code uses the first form, the derived one. The rounding is lossless in both
+directions: `round(round(m/h) · h) = m` for every m between 5 and 30.
+
+**The minimum is not used**, which is what instinct calls the conservative
+choice. The UCL decreases monotonically with I: with K = 30, J = 4 and h = 0.67,
+I = 14 gives 20.0097, I = 18 gives 19.7499, I = 20 gives 19.6929 and I = 25
+gives 19.5374. The minimum gives the **widest** limit, and a wider limit signals
+less often. That would be prudent against false alarms, which in the Tennessee
+Eastman application are not the binding risk, at the cost of detection, which
+is. See section 1.
+
+The magnitude of the difference is small, around 1.6% between I = 14 and I = 20.
+What mattered was not the size of the error but that it was arbitrary: the
+earlier implementation took the size of the **first** batch, and because batches
+are traversed in order of appearance, **reordering the rows of the data frame
+changed the limit** without changing a single value. `unique(data$Batch)` takes
+order of appearance, and there is now a test that pins this.
+
+`calibrate_afm_mcd` returns `batch_sizes` for this reason; without it
+`ucl_F_adjusted` cannot check the assumption it depends on.
+
+**Verified on `afm_phase1`.** The robust center comes out at
+0.053 / 0.014 / 0.036 / 0.011 with 6 of 30 batches contaminated. The classical
+center from `hotelling_classical_calibrate` on the same data comes out at
+0.167 / 0.142 / 0.157 / 0.140 — 4.6 times further from the true zero.
+
+---
+
+## 6. Why the example uses seed 20260425
+
+All of the package documentation — examples, vignette and README — uses a single
+scenario, the base configuration of the paper:
+
+```r
+simulate_batch_process(
+  K1 = 30, K2 = 20, I = 20, J = 4, rho = 0.6,
+  outlier_batches_F1 = 6, outlier_rate = 0.20, outlier_shift = 4,
+  prop_ooc_F2 = 0.5, shift_ooc = 1.0,
+  seed = 20260425
+)
+```
+
+The previous scenario had a deeper flaw: both methods flagged the same 6 of 20
+batches and the determinant ratio was 1.02. Anyone running the default example
+could not see what the method is for.
+
+**The seed is deliberate and it is not the most flattering one.** Over 200
+replicates of this configuration the package averages 0.824 detection for the
+proposed method and 0.208 for the classical one. Seed 20260425 gives 8 of 10 and
+2 of 10, the single replicate closest to both means at once. Seeds 20260417 and
+20260419 give the proposed method 10 of 10: they are the most favourable outcome
+and are ruled out for that reason. The example should not be "improved" by
+switching to them.
+
+**The example counts are not rates, and they do not measure the same thing as
+the paper.** The paper reports 0.863 and 0.270, averaged over 2000 repetitions,
+and measures them after equalising both methods to a common ARL0 through the
+empirical quantile of each method's own null distribution over 5000 in-control
+batches. The example applies each method's operating limit instead. The two
+quantities are close but not identical: the same ordering and the same
+separation are to be expected, agreement to the decimal is not. The gap between
+0.824 and 0.863, and between 0.208 and 0.270, is explained by that difference
+but **has not been verified**, and no attempt should be made to close it by
+adjusting the example.
+
+With delta = 1.0 and alpha = 0.001, moreover, detection power is the only thing
+separating the two methods in this scenario. Neither the 12 seeds nor the 200
+replicates produced a single false alarm for either method, which is consistent
+with section 1 and is not a limitation of the example.
+
+### Further choices in `plot_afm_weights`
+
+**Transposed axes.** Batch identifiers go on the y axis so that they stay
+horizontal and legible with the K = 30 batches of the paper. Sorting by weight
+already discards run order, so nothing is lost by transposing.
+
+**Observed range of the weights.** On `afm_phase1`: from 0.0065 (F1_B17) to
+0.0900 (F1_B04), a factor of nearly 14 between the extremes with only 6 lightly
+contaminated batches.
+
+### Design choices in `plot_method_comparison`
+
+**Why the figure carries no caption.** The central message is that the classical
+chart does not become jumpy under contamination, it becomes deaf. That sentence
+is the entire point of the figure, and it is not printed underneath: a caption
+nobody reads is worse than none, because the lines that do matter get skipped
+along with it.
+
+**Why `scale = "ratio"` is the default.** With raw statistics the two panels need
+independent vertical axes, and then their heights are not comparable. That calls
+for a warning, and this figure has no caption to put one in. Dividing by each
+method's own limit removes the need for the warning rather than repeating it.
+With `scale = "T2"` the warning line reappears automatically: the caption exists
+only when the figure needs defending against its own natural reading.
+
+**Verified on `afm_phase2`.** The same batch F2_B01 sits at 1.83 of the limit in
+the robust panel and at 0.87 in the classical one. F2_B04 likewise: 1.79 against
+0.87. The classical alarm set is contained in the robust one, without exception.
+It is the demonstration of masking without a single formula.
+
+### Names withdrawn from the documentation of `ucl_F_adjusted`
+
+**"Way 1".** The help page used this name for the analytic limit, citing it as
+though the paper used it. It does not: Section 2.5 says "analytic limit" and
+"operating limit". The name came from an earlier stage in which the candidate
+routes were numbered (analytic, K_eff, bootstrap). When the others were
+discarded the name lost its meaning and survived as a fossil. Replaced by a
+reference to Equation (8).
+
+**Hardin-Rocke.** The help page stated that this correction is not applied.
+Hardin and Rocke appear neither in the paper nor in its bibliography; the
+mention came from a separate clarification document. A denial with no reference
+and no explanation informs nobody: the reader learns neither what is not being
+applied nor why it should matter. Withdrawn.
+
+**The two alphas.** `mcd_alpha` (the MCD retention fraction, 0.67) and `alpha`
+(the false alarm rate, 0.001) are unrelated parameters with similar names. The
+signatures are published and do not change; the warning goes in the help text of
+both arguments.
+
+### The `sample()` call in `simulate_batch_process`
+
+**The bug.** `sample(x, n)` draws from `1:x` when `x` has length one, instead of
+from `x` itself. It is a historical convenience in R that turns into a defect as
+soon as a vector is down to a single element. Here it happened with
+`available_for_outliers`: with `prop_contam_F1 = 0.97` and `K1 = 30`, 29 batches
+are shifted and one remains available, and the outliers were then injected into a
+different batch from the one chosen, leaving the `Status` and
+`ContaminationType` labels misassigned with no warning at all.
+
+**The fix.** `x[sample.int(length(x), n)]`, the idiom recommended in `sample`'s
+own help page.
+
+**Verified not to move the datasets.** With `prop_contam_F1 = 0`, which is the
+configuration of `afm_phase1`, no earlier branch consumes the generator and
+`available_for_outliers` arrives with all 30 batches, so both forms consume
+randomness identically. The 24 tests in `test-data.R`, which regenerate the data
+from the seeded call and compare against what is shipped, all still pass.
+
+**The seed in that example.** `seed = 20260417` happens to be one of the two
+seeds ruled out for the paper scenario for giving 10 of 10. The scenario here is
+a different one (K1 = 30 with 2 outlier batches and 7% shifted, K2 with 30% out
+of control), so it is not the same case, but the number coincides and can confuse
+anyone reading both.
+
+---
+
+## 7. What each invalid input actually does, measured
+
+The validation guards were added against a list of assumed failures. Measuring
+them before writing the code showed that three of the four behaved differently
+from what had been assumed, and in two cases worse. They are recorded here
+because intuition about them has been wrong, and because they explain why Phase
+1 and Phase 2 need different guards rather than one shared guard.
+
+### A text column does not make `covMcd` fail: the calibration lies
+
+A non-numeric variable was assumed to make `covMcd` fail with an internal
+message from `robustbase`. **It does not fail at all.** `data.matrix()` converts
+the text column into factor codes, and the levels are ordered alphabetically,
+not numerically. On `F1_B01`:
+
+
+The calibration finishes without a warning and returns `mu_r["Var2"] = 10.32`
+and `Sw["Var2","Var2"] = 44.09`, against roughly 0.01 and 1.4 in the honest
+columns. All finite, all plausible, all wrong. It is the same failure mode that
+motivates the variable auto-detection message: a credible and incorrect result,
+which is worse than an error.
+
+### The text is silent only in Phase 1, and the reason matters
+
+In Phase 2 the same text column **does** abort, with `'x' must be numeric`. The
+difference is which function touches the data: Phase 1 goes through `covMcd`,
+which coerces via `data.matrix()`; Phase 2 goes through `colMeans()`, which
+refuses.
+
+The two phases therefore do not carry the same guard out of symmetry. They carry
+different guards because they fail differently: in Phase 1 the type check
+prevents a silent disaster, and in Phase 2 it only improves a message that was
+already loud.
+
+### An NA in Phase 2 does not hide one batch: it destroys the whole count
+
+`T2` comes out NA, so `is_ooc` comes out NA, and because the count is
+`sum(mon$is_ooc)`, **the entire sum comes out NA rather than a number**. It is
+not one batch's alarm that is lost: it is the total. This happened identically in
+both twins, robust and classical, and reached the user in print through the real
+path, `run_afm_mcd(compare_classical = TRUE)` followed by `summary()`.
+
+This is why the Phase 2 guard was applied to both twins, whereas the rejection
+of J = 1 was applied only to the main one: J = 1 is an absurd input with a
+visible result, while an NA appears only in production and with an invisible
+effect.
+
+### An NA in Phase 1 is absorbed by `covMcd`
+
+This is the only one of the four that turned out **less** serious than assumed.
+Injecting an NA into `afm_phase1`, `mu_r` comes out identical to four decimals
+(0.0535 / 0.0137 / 0.0356 / 0.0113 either way): `covMcd` absorbs it without
+propagating. The guard is kept as a precaution and for symmetry with the
+classical twin, which already had one, not because it currently produces bad
+numbers.
