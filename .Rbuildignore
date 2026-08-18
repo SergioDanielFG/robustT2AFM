@@ -24,3 +24,4 @@
 ^comparacion_.*\.csv$
 ^dataset_.*\.rds$
 ^.*-MacBook Pro.*
+^REPRODUCIBILITY\.md$
