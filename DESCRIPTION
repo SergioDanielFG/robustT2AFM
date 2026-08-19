@@ -1,6 +1,6 @@
 Package: robustT2AFM
 Title: AFM-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
     person("Sergio Daniel", "Frutos-Galarza", , "idu045235@usal.es",
            role = c("aut", "cre"),
@@ -8,8 +8,9 @@ Authors@R: c(
     person("Omar", "Ruiz-Barzola", , "oruiz@espol.edu.ec",
            role = "ths",
            comment = c(ORCID = "0000-0001-8206-1744")),
-    person("Jhon", "Ramírez", , "jramirez@espol.edu.ec",
-           role = "ths"),
+    person("John", "Ramirez-Figueroa", , "jramirez@espol.edu.ec",
+           role = "ths",
+           comment = c(ORCID = "0000-0002-6605-8673")),
     person("Purificación", "Galindo-Villardón", , "pgalindo@usal.es",
            role = "ths",
            comment = c(ORCID = "0000-0001-6977-7545"))
@@ -59,5 +60,6 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Language: en-US
-URL: https://github.com/SergioDanielFG/robustT2AFM
+URL: https://github.com/SergioDanielFG/robustT2AFM,
+    https://doi.org/10.5281/zenodo.21891576
 BugReports: https://github.com/SergioDanielFG/robustT2AFM/issues
