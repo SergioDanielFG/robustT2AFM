@@ -111,3 +111,58 @@ the second keeps full precision and is the one to cite.
 `SCRIPT_FINAL_SIMULATIONS.R` also writes `table_3_2_calibration.csv`, which
 is an intermediate output that no table of the paper uses. It is not shipped
 here.
+
+
+## Two more notes on running the scripts
+
+`24_consolidate_center_audit.R` reads six intermediate files,
+`center_audit_v4_detail_scenario_0.csv` through `_5.csv`, which are written by
+`23_REFERENCE_CENTER_AUDIT_v4.R`. They are not shipped here, so script 23 has
+to be run before script 24.
+
+`ZTEST_TABLE1_FAITHFUL_v2.R` and `SCRIPT_FINAL_SIMULATIONS.R` label the same
+classical limit slightly differently, as `Clasico (Montgomery)` and
+`Clasico Montgomery`. Both refer to the Phase II limit of Equation (3).
+
+## Label values in the result files
+
+The analysis was carried out in Spanish and some label values in the result
+files remain in that language. They are labels only: every numeric column is
+independent of them, and no result of the paper depends on the wording. The
+correspondence with the English terms used in the manuscript is as follows.
+
+| In the files | In the paper |
+|---|---|
+| `limpia` / `contaminada` | clean / contaminated Phase 1 |
+| `pareado` / `no pareado` | paired / unpaired analysis |
+| `publicada` | the Phase 2 composition reported in Table 9 |
+| `sorteo_01` … `sorteo_19` | the nineteen redrawn compositions of Section 4.5 |
+| `Propuesto (AFM-MCD)` | Proposed (AFM-MCD) |
+| `Clasico (Hotelling)` | Classical (Hotelling) |
+| `Robusto F (m*)` | Robust F (m*) |
+| `Clasico (Montgomery)` | Classical (Montgomery) |
+| `Robusto F con K (actual)` | Robust F with K, as used |
+| `Robusto F con K_eff (Satterthwaite)` | Robust F with K_eff (Satterthwaite) |
+| `F analitico (actual)` / `F analitico (Ec. 8)` | Analytic F, Equation (8) |
+| `Bootstrap subconjunto MCD (centrado, escala corregida)` | MCD-subset bootstrap, centred and scale corrected |
+| `Bootstrap lote completo (centrado)` | Full-batch bootstrap, centred |
+| `Bootstrap ponderado por w_k (centrado)` | Bootstrap weighted by w_k, centred |
+| `Escalon fuerte` | Step disturbance, large mean shift (IDV 1) |
+| `Escalon moderado` | Step disturbance, moderate mean shift (IDV 7) |
+| `Casi indetectable` | Step disturbance, negligible mean shift (IDV 3) |
+| `Aleatorio` | Random variation (IDV 8) |
+| `Deriva lenta` | Slow drift (IDV 13) |
+| `0. Limpia (control negativo)` | Clean, negative control |
+| `1. Atipicos internos (paper)` | Within-batch outliers, the paper scenario |
+| `2. / 3. / 4. Desplazamiento puro N SD` | Pure shift of N standard deviations |
+| `5. Desplaz. 3 SD + covarianza x2` | Shift of 3 SD with covariance doubled |
+| `media simple lotes con fallo` | simple mean of the faulty batches |
+| `centro MCD lotes con fallo` | MCD center of the faulty batches |
+| `factor de recentrado` | recentring factor |
+| `centro de referencia mu_r` | reference center mu_r |
+
+The disturbance types follow Downs and Vogel (1993), Table 8, where IDV 1, 3
+and 7 are all step disturbances, IDV 8 is random variation and IDV 13 is a
+slow drift. The distinction between large, moderate and negligible shifts is
+ours, and rests on the measured mean shift each fault induces, reported in
+Table 10 of the paper.
