@@ -85,17 +85,19 @@ dominated by the time spent reading the data files, which are large.
 | `TEP_VARIABLES_SUMMARY.R` | `tep_variables_summary.csv` | Table 6 |
 | `19_acf_with_step1.R` | `step_sensitivity_ljungbox_with_step1.csv` | Table 7, Table 8, Section 4.3 |
 | `SUBSAMPLING_STEP_SENSITIVITY.R` | `step_sensitivity_detection.csv` | Table 8, false alarm column |
-| `SCRIPT_Figure_ACF.R` | figure only | Figure 4 |
+| `SCRIPT_Figure_ACF_v2.R` | figure only | Figure 4 |
 | `PHASE1_PIPELINE_STEP30.R` | no file; base pipeline | Section 4.4, and the basis of Figures 5 and 6 |
-| `Script_Weights.R` | figure only | Figure 5 |
-| `BRIDGE_Script_Control_Chart.R`, `Script_Control_Chart.R` | figure only | Figure 6 |
+| `Script_Weights_v2.R` | figure only | Figure 5 |
+| `BRIDGE_Script_Control_Chart.R`, `Script_Control_Chart_v2.R` | figure only | Figure 6 |
 | `18_phase1_idv1_cross_matrix.R` | `phase1_cross_matrix.csv` | Table 9, Sections 4.4 and 4.6 |
 | `TEP_ROBUST_CENTER.R` | `tep_robust_center_by_variable.csv`, `tep_robust_center_summary.csv` | Section 4.4 |
 | `21_phase2_stability_resampling.R` | `phase2_stability_summary.csv`, `phase2_stability_by_composition.csv` | Section 4.5, twenty compositions |
 | `TEP_EXTENDED_VALIDATION_STEP30.R` | `table_multiple_faults_step30.csv` | Table 10 |
 | `23_REFERENCE_CENTER_AUDIT_v4.R` | `weighted_center_audit_v4.csv` | Section 4.6 |
 | `24_consolidate_center_audit.R` | `center_audit_summary.csv`, `center_audit_full_detail.csv` | Section 4.6 |
-| `TEP_BOOTSTRAP_LIMIT.R` | `tep_reproducibility.csv`, `tep_limits_comparison.csv` | Section 4.4, the 16.14 determinant ratio |
+| `TEP_BOOTSTRAP_LIMIT.R` | `tep_reproducibility.csv`, `tep_limits_comparison.csv` | Section 4.4, the 16.14 determinant ratio |27 (not included) | weight function comparison | not reproducible, excluded |
+| 28_console_pvalues.R | recomputes the five p-values quoted in Section 3.2 | console_pvalues.csv |
+| 30_tep_ablation.R | four ablation variants on the TEP (Table 10) | tep_ablation.csv |
 
 ## Two notes on the result files
 
