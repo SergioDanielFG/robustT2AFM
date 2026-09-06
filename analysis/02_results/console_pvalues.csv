@@ -1,0 +1,6 @@
+"test","statistic","df","p_value","text_value","p_rounded","match"
+"Table 1: two-proportion z, robust vs classical",1.62840952051288,1,0.201923175404219,0.2,0.2,"OK"
+"Table 1: Fisher exact, robust vs classical",NA,NA,0.224174725743826,0.22,0.22,"OK"
+"Table 2: chi-square homogeneity across K",2.46607680977675,4,0.650720392664498,0.65,0.65,"OK"
+"Table 2: Cochran-Armitage trend in K",0.00398592990918143,1,0.949659623924169,0.95,0.95,"OK"
+"Table 3: two-proportion z, clean vs contaminated",0.368905804897592,1,0.543601303103876,0.54,0.54,"OK"

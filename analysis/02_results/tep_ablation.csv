@@ -1,0 +1,5 @@
+"Variant","Covariance","Weights","UCL","Detected","FalseAlarms","T2_median"
+"(a) Classical","Classical","Uniform",19.46,2,0,11.5
+"(b) MCD only","MCD","Uniform",19.69,20,0,56.5
+"(c) AFM only","Classical","AFM",19.46,20,0,54.4
+"(d) AFM-MCD","MCD","AFM",19.69,20,0,88.7
