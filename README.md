@@ -74,7 +74,7 @@ remotes::install_github("SergioDanielFG/robustT2AFM")
 Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramírez, J., Galindo-Villardón, P.
 (2026). A Robust Hotelling-Type T2 Control Chart Combining the Minimum
 Covariance Determinant Estimator with Multiple Factor Analysis Weighting.
-Manuscript in preparation.
+Subbmited.
 
 ## License
 
