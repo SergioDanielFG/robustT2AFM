@@ -1,6 +1,6 @@
 Package: robustT2AFM
 Title: AFM-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes
-Version: 0.2.0
+Version: 0.2.2
 Authors@R: c(
     person("Sergio Daniel", "Frutos-Galarza", , "idu045235@usal.es",
            role = c("aut", "cre"),
