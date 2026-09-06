@@ -95,9 +95,9 @@ dominated by the time spent reading the data files, which are large.
 | `TEP_EXTENDED_VALIDATION_STEP30.R` | `table_multiple_faults_step30.csv` | Table 10 |
 | `23_REFERENCE_CENTER_AUDIT_v4.R` | `weighted_center_audit_v4.csv` | Section 4.6 |
 | `24_consolidate_center_audit.R` | `center_audit_summary.csv`, `center_audit_full_detail.csv` | Section 4.6 |
-| `TEP_BOOTSTRAP_LIMIT.R` | `tep_reproducibility.csv`, `tep_limits_comparison.csv` | Section 4.4, the 16.14 determinant ratio |27 (not included) | weight function comparison | not reproducible, excluded |
-| 28_console_pvalues.R | recomputes the five p-values quoted in Section 3.2 | console_pvalues.csv |
-| 30_tep_ablation.R | four ablation variants on the TEP (Table 10) | tep_ablation.csv |
+| `TEP_BOOTSTRAP_LIMIT.R` | `tep_reproducibility.csv`, `tep_limits_comparison.csv` | Section 4.4, the 16.14 determinant ratio |
+| `28_console_pvalues.R` | `console_pvalues.csv` | Section 3.2, the five p-values |
+| `30_tep_ablation.R` | `tep_ablation.csv` | Table 10, ablation block |
 
 ## Two notes on the result files
 
@@ -115,12 +115,15 @@ is an intermediate output that no table of the paper uses. It is not shipped
 here.
 
 
-## Two more notes on running the scripts
+## Notes on running the scripts
 
 `24_consolidate_center_audit.R` reads six intermediate files,
 `center_audit_v4_detail_scenario_0.csv` through `_5.csv`, which are written by
 `23_REFERENCE_CENTER_AUDIT_v4.R`. They are not shipped here, so script 23 has
 to be run before script 24.
+`19_acf_with_step1.R` reads `step_sensitivity_ljungbox.csv`, written by
+`SUBSAMPLING_STEP_SENSITIVITY.R`. It is not shipped here, so that script has
+to be run first.
 
 `ZTEST_TABLE1_FAITHFUL_v2.R` and `SCRIPT_FINAL_SIMULATIONS.R` label the same
 classical limit slightly differently, as `Clasico (Montgomery)` and
