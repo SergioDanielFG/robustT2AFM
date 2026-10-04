@@ -80,7 +80,8 @@ The long simulation scripts (M1, M2, M2b, M3 and M5) save the T² values of
 every replicate in `05_revision_R1/03_T2_crudos/`, and the short scripts
 (M1b, M1c, M2c, M3b, M5b, M2M3_diagnostics and V_ucl_simulated_vs_M5) read
 them to compute the tables. They take 112 MB, so they are not kept in this
-repository but in a separate Zenodo record: [DOI pending]. Unzip them into
+repository but in a separate Zenodo record:
+https://doi.org/10.5281/zenodo.23140877. Unzip them into
 that folder. Without them, the long scripts have to be run first, which takes
 several hours.
 
