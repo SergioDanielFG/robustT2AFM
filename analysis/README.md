@@ -98,10 +98,10 @@ run are recorded in `02_results/sessionInfo_R3_02_v030.txt`.
 
 | Script | Writes | Appears in |
 |---|---|---|
-| `SCRIPT_M1_limit.R` | `table_M1_T1_calibration.csv`, `table_M1_T2_K.csv`, `table_M1_T3_seeds.csv`, `table_M1_T3_pooled.csv`, `table_M1_T13_center.csv`, `table_M1_mstar.csv` | Section 2.2 (m* = 14; 16.7 and 15.7 after reweighting); Section 3.2 (1019 and 1326) |
+| `SCRIPT_M1_limit.R` | `table_M1_T1_calibration.csv`, `table_M1_T2_K.csv`, `table_M1_T3_seeds.csv`, `table_M1_T3_pooled.csv`, `table_M1_mstar.csv` | Section 2.2 (m* = 14; 16.7 and 15.7 after reweighting); Section 3.2 (1019 and 1326) |
 | `SCRIPT_M1b_limit_posthoc.R` | `table_M1b_mstar_arl0.csv`, `table_M1b_empirical_limit.csv` | Sections 2.5 and 3.2 (m* = 13, 16.7 and 20) |
 | `SCRIPT_M1c_recount_mstar14.R` | `table_M1c_cells_mstar.csv`, `table_M1c_tests.csv`, `table_M1c_empirical_limit.csv` | Tables 2, 3 and 4; Section 3.2 (tests, confidence interval, correction factor) |
-| `SCRIPT_M5_simulated_limit.R` | `table_M5_simulated_limit.csv`, `table_M5_limit_spread.csv`, `table_M5_TEP.csv` | Table 5 (simulated and classical limits); Section 3.2 |
+| `SCRIPT_M5_simulated_limit.R` | `table_M5_simulated_limit.csv`, `table_M5_limit_spread.csv` | Table 5 (simulated and classical limits); Section 3.2 |
 | `SCRIPT_M5b_recount_mstar14.R` | `table_M5b_eq8_mstar14.csv` | Table 5, Equation (8) column |
 | `SCRIPT_R1_10_shift_directions.R` | `table_R1_10_shift_directions.csv` | Shift directions used by M2 (Section 3.1) |
 | `SCRIPT_M2_power.R` | `table_M2_all.csv`, `table_M2_T4_power.csv`, `table_M2_T5_factorial.csv`, `table_M2_ncal.csv`, `table_M2_competitors.csv`, `table_M2_directions.csv`, `table_M2_paired.csv` | Tables 6, 7 and 13; Section 3.3 (50,000 batches) |
@@ -144,8 +144,9 @@ They are kept because M2 reads them to check that the new code reproduces the
 numbers already published, and M4b takes the twenty Phase 2 compositions from
 the last one.
 
-`table_M5_TEP.csv` is a by-product of M5, computed with m* = 13, and is not
-cited in the paper.
+`SCRIPT_M1_limit.R` also writes `table_M1_T13_center.csv`, and
+`SCRIPT_M5_simulated_limit.R` also writes `table_M5_TEP.csv`. No number of
+the paper comes from them, so they are not shipped here.
 
 A few numbers in the text are simple operations on these files, for example
 the ratio between the first eigenvalue and the mean of the other three in
