@@ -110,6 +110,8 @@ summary.afm_mcd_study <- function(object, ...) {
       K2          = nrow(mon),
       I2          = if (length(unique(mon$I)) == 1) mon$I[1] else NA_integer_,
       mcd_alpha   = cal$mcd_alpha,
+      scaling     = if (is.null(cal$scaling)) "none" else cal$scaling,
+      center      = if (is.null(cal$center))  "mean" else cal$center,
       mu_r        = cal$mu_r,
       w_min       = min(w),
       w_min_batch = names(w)[which.min(w)],
@@ -149,6 +151,8 @@ print.summary.afm_mcd_study <- function(x, ...) {
               if (is.na(x$I2)) "" else sprintf(", %d observations each", x$I2)))
 
   cat("\nPHASE 1 CALIBRATION\n")
+  cat(sprintf("  Options:           scaling = \"%s\", center = \"%s\"\n",
+              x$scaling, x$center))
 
   cat("  Reference centre:  ",
       paste(format(round(x$mu_r, 3), nsmall = 3), collapse = "  "), "\n", sep = "")
@@ -170,9 +174,11 @@ print.summary.afm_mcd_study <- function(x, ...) {
   cat(sprintf("  UCL = %.4f      %s, alpha = %s\n",
               x$ucl$UCL, x$ucl$method,
               format(x$ucl$parameters$alpha, scientific = FALSE)))
-  cat(sprintf("                     (J = %d, K = %d, m* = %d, df2 = %d)\n",
+  cat(sprintf("                     (J = %d, K = %d, m* = %d [%s], df2 = %d)\n",
               x$ucl$parameters$J, x$ucl$parameters$K,
-              x$ucl$parameters$m_star, x$ucl$parameters$df2))
+              x$ucl$parameters$m_star,
+              if (is.null(x$ucl$parameters$m_star_rule)) "nominal" else x$ucl$parameters$m_star_rule,
+              x$ucl$parameters$df2))
 
   cat(sprintf("\nPHASE 2 MONITORING            %d of %d out of control (%.1f%%)\n",
               x$n_ooc, x$K2, x$pct_ooc))

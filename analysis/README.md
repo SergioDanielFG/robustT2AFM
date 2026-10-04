@@ -1,22 +1,35 @@
 # Analysis compendium
 
 The scripts and result files behind the tables and figures of
-Frutos-Galarza et al. (2026). This directory is not part of the R package:
-it is excluded from the build through `.Rbuildignore` and exists so that the
-published numbers can be traced back to the code that produced them.
+Frutos-Galarza et al. (2026), in its revised version. This directory is not
+part of the R package: it is excluded from the build through `.Rbuildignore`
+and exists so that the published numbers can be traced back to the code that
+produced them.
 
 The package itself, in `R/`, implements the method. These scripts use it to
-run the Monte Carlo campaigns and the Tennessee Eastman application.
+run the Monte Carlo campaigns and the Tennessee Eastman application. The
+compendium that accompanied the original manuscript remains available on
+Zenodo at https://doi.org/10.5281/zenodo.22544989.
 
 ---
 
 ## Running the scripts
 
-The scripts were written to run from a working directory containing two
-sibling folders, and they have been left exactly as they were when they
-produced the published figures. To reproduce a result:
+The scripts have been left exactly as they were when they produced the
+published numbers, and they read and write folders through relative paths.
+To reproduce a result:
 
-1. Create a working directory anywhere, with two subfolders:
+1. Create a working directory anywhere, with these subfolders:
+
+```
+working_directory/
+  01_scripts/                      copy PHASE1_PIPELINE_STEP30.R here
+  02_resultados/                   copy the five version 0.2.2 files here (see below)
+  03_figuras/
+  04_datos/                        the Tennessee Eastman data
+  05_revision_R1/02_resultados/
+  05_revision_R1/03_T2_crudos/
+```
 
 2. Set that directory as the working directory in R:
 
@@ -27,16 +40,18 @@ setwd("path/to/working_directory")
 3. Run any script by sourcing it from wherever this repository sits:
 
 ```r
-source("path/to/robustT2AFM/analysis/01_scripts/SCRIPT_FINAL_SIMULATIONS.R")
+source("path/to/robustT2AFM/analysis/01_scripts/SCRIPT_M2_power.R")
 ```
 
-The output lands in `02_resultados/`. Compare it against the corresponding
-file in `02_results/` of this repository, which holds the versions the paper
-was written from.
+The output lands in `05_revision_R1/02_resultados/`, and the figures in
+`03_figuras/`. Compare it against the file with the same name in
+`02_results/` of this repository, which holds the versions the paper was
+written from. When a script needs a file written by another one, either run
+that other script first or copy the file from `02_results/`.
 
-Scripts that only run simulations need no data and work with an empty
-`04_datos/`. Scripts that read the Tennessee Eastman collection need the
-files described next.
+The scripts need R 4.5 with robustT2AFM 0.3.0 and the packages MASS,
+robustbase, rrcov, sn, ggplot2 and patchwork. Scripts that only run
+simulations need no data and work with an empty `04_datos/`.
 
 ## The Tennessee Eastman data
 
@@ -45,26 +60,37 @@ by Rieth, Amsel, Tran and Cook, available at
 
   https://doi.org/10.7910/DVN/6C3JR1
 
-Download the four CSV files and place them in `04_datos/` under these names:
+Download the files and place them in `04_datos/` under these names:
+
+```
+TEP_FaultFree_Training.csv
+TEP_FaultFree_Testing.csv
+TEP_Faulty_Testing.csv
+```
 
 The fault-free training set characterises normal operation and is used only
-for variable selection. The testing sets supply the runs that make up
-Phase 1 and Phase 2. Keeping the two apart is deliberate: it prevents the
+for variable selection (Table 15). The testing sets supply the runs that make
+up Phase 1 and Phase 2. Keeping the two apart is deliberate: it prevents the
 selection of variables from being made on the same runs the method is then
-evaluated on. Computing the Table 6 summary on the testing set instead
-shifts the coefficient of variation of `xmv_9` from 0.056643 to 0.058679.
+evaluated on.
+
+## The T² values of each replicate
+
+The long simulation scripts (M1, M2, M2b, M3 and M5) save the T² values of
+every replicate in `05_revision_R1/03_T2_crudos/`, and the short scripts
+(M1b, M1c, M2c, M3b, M5b, M2M3_diagnostics and V_ucl_simulated_vs_M5) read
+them to compute the tables. They take 112 MB, so they are not kept in this
+repository but in a separate Zenodo record: [DOI pending]. Unzip them into
+that folder. Without them, the long scripts have to be run first, which takes
+several hours.
 
 ## Reproducibility
 
-The numeric anchors, fixed parameters and seeds are documented in
-`REPRODUCIBILITY.md` at the repository root. Every campaign derives its
-random streams from a single base, `SEED_BASE = 2026`, so a rerun on the
-same data must return the same numbers.
-
-`21_phase2_stability_resampling.R` takes about 93 minutes on eight parallel
-workers. The other Monte Carlo campaigns, which run 2000 replicates each,
-take on the order of tens of minutes. The Tennessee Eastman scripts are
-dominated by the time spent reading the data files, which are large.
+Every script fixes its seeds at the top, so a rerun on the same data returns
+the same numbers. In addition, 26 of the 31 scripts check numeric anchors,
+values already known that must come out unchanged, and stop if any of them is
+not reproduced. The exact versions of R and of each package used for every
+run are recorded in `02_results/sessionInfo_R3_02_v030.txt`.
 
 ---
 
@@ -72,102 +98,99 @@ dominated by the time spent reading the data files, which are large.
 
 | Script | Writes | Appears in |
 |---|---|---|
-| `ZTEST_TABLE1_FAITHFUL_v2.R` | `table1_ztest_faithful.csv`, `far_per_replicate.csv` | Table 1, first two rows |
-| `KEFF_EFFECT_v2.R` | `table1_row_keff.csv` | Table 1, K_eff row |
-| `CENTERED_BOOTSTRAP_v5.R` | `table1_rows_bootstrap_v5.csv` | Table 1, three bootstrap rows |
-| `16_ci_paired_far_difference.R` | `ci_paired_far.csv` | Section 3.2, paired confidence interval |
-| `15_arl0_convergence_K_v3.R` | `arl0_convergence_K_v3.csv` | Table 2 |
-| `20_arl0_clean_vs_contaminated_v2.R` | `arl0_clean_vs_contaminated_v2.csv` | Section 3.2, clean against contaminated Phase 1 |
-| `SCRIPT_FINAL_SIMULATIONS.R` | `table_3_3_power.csv`, `table_3_4_sensitivity.csv`, `table_3_4b_contamination.csv` | Tables 3 and 5 |
-| `SCRIPT_FINAL_ABLATIONS_2x2.R` | `table_ablation_2x2_final.csv` | Table 4 |
-| `22_rho_sensitivity_parallel.R` | `table_3_4c_rho.csv` | Table 5, correlation block |
-| `Script_figures_detection_power.R` | reads `table_3_3_power.csv` | Figure 2 |
-| `TEP_VARIABLES_SUMMARY.R` | `tep_variables_summary.csv` | Table 6 |
-| `19_acf_with_step1.R` | `step_sensitivity_ljungbox_with_step1.csv` | Table 7, Table 8, Section 4.3 |
-| `SUBSAMPLING_STEP_SENSITIVITY.R` | `step_sensitivity_detection.csv` | Table 8, false alarm column |
+| `SCRIPT_M1_limit.R` | `table_M1_T1_calibration.csv`, `table_M1_T2_K.csv`, `table_M1_T3_seeds.csv`, `table_M1_T3_pooled.csv`, `table_M1_T13_center.csv`, `table_M1_mstar.csv` | Section 2.2 (m* = 14; 16.7 and 15.7 after reweighting); Section 3.2 (1019 and 1326) |
+| `SCRIPT_M1b_limit_posthoc.R` | `table_M1b_mstar_arl0.csv`, `table_M1b_empirical_limit.csv` | Sections 2.5 and 3.2 (m* = 13, 16.7 and 20) |
+| `SCRIPT_M1c_recount_mstar14.R` | `table_M1c_cells_mstar.csv`, `table_M1c_tests.csv`, `table_M1c_empirical_limit.csv` | Tables 2, 3 and 4; Section 3.2 (tests, confidence interval, correction factor) |
+| `SCRIPT_M5_simulated_limit.R` | `table_M5_simulated_limit.csv`, `table_M5_limit_spread.csv`, `table_M5_TEP.csv` | Table 5 (simulated and classical limits); Section 3.2 |
+| `SCRIPT_M5b_recount_mstar14.R` | `table_M5b_eq8_mstar14.csv` | Table 5, Equation (8) column |
+| `SCRIPT_R1_10_shift_directions.R` | `table_R1_10_shift_directions.csv` | Shift directions used by M2 (Section 3.1) |
+| `SCRIPT_M2_power.R` | `table_M2_all.csv`, `table_M2_T4_power.csv`, `table_M2_T5_factorial.csv`, `table_M2_ncal.csv`, `table_M2_competitors.csv`, `table_M2_directions.csv`, `table_M2_paired.csv` | Tables 6, 7 and 13; Section 3.3 (50,000 batches) |
+| `SCRIPT_M2M3_diagnostics.R` | `table_M3_W_diagnostic.csv` | Sections 3.3 and 3.7 (shift of the center, first eigenvalue) |
+| `SCRIPT_M2b_sensitivity_sameseeds.R` | `table_M2b_all.csv`, `table_M2b_paired.csv`, `table_M2b_T6_sensitivity.csv` | Table 8; Section 3.8 |
+| `SCRIPT_M2c_directions_factorial.R` | `table_M2c_directions_factorial.csv`, `table_M2c_directions_paired.csv` | Table 10 |
+| `SCRIPT_M3_adverse_scenarios.R` | `table_M3_all.csv`, `table_M3_paired.csv`, `table_M3_generator_check.csv` | Tables 11 and 12; Section 3.1 (skewness) |
+| `SCRIPT_M3b_exact_means.R` | `table_M3_all_6dec.csv` | Tables 11 and 12 (third decimal) |
+| `SCRIPT_R1_04_scale_dependence.R` | `table_R1_04_scale_dependence.csv` | Table 9 (unscaled and correlation columns) |
+| `SCRIPT_R1_04e_sim_MAD.R` | `table_R1_04e_sim_MAD.csv` | Table 9 (standard deviation and MAD columns) |
+| `SCRIPT_R1_05_Sw_properties_v030.R` | `table_R1_05_Sw_properties_v030.csv`, `table_R1_05_Sw_elementwise_bias_v030.csv` | Tables A1 and A2; Sections 2.4, 3.3 and 3.6 |
+| `TEP_VARIABLES_SUMMARY.R` | `tep_variables_summary.csv` | Table 15 |
+| `19_acf_with_step1.R` | `step_sensitivity_ljungbox_with_step1.csv` | Tables 16 and 17; Section 4.3 |
 | `SCRIPT_Figure_ACF_v2.R` | figure only | Figure 4 |
-| `PHASE1_PIPELINE_STEP30.R` | no file; base pipeline | Section 4.4, and the basis of Figures 5 and 6 |
-| `Script_Weights_v2.R` | figure only | Figure 5 |
-| `BRIDGE_Script_Control_Chart.R`, `Script_Control_Chart_v2.R` | figure only | Figure 6 |
-| `18_phase1_idv1_cross_matrix.R` | `phase1_cross_matrix.csv` | Table 9, Sections 4.4 and 4.6 |
-| `TEP_ROBUST_CENTER.R` | `tep_robust_center_by_variable.csv`, `tep_robust_center_summary.csv` | Section 4.4 |
-| `21_phase2_stability_resampling.R` | `phase2_stability_summary.csv`, `phase2_stability_by_composition.csv` | Section 4.5, twenty compositions |
-| `TEP_EXTENDED_VALIDATION_STEP30.R` | `table_multiple_faults_step30.csv` | Table 10 |
-| `23_REFERENCE_CENTER_AUDIT_v4.R` | `weighted_center_audit_v4.csv` | Section 4.6 |
-| `24_consolidate_center_audit.R` | `center_audit_summary.csv`, `center_audit_full_detail.csv` | Section 4.6 |
-| `TEP_BOOTSTRAP_LIMIT.R` | `tep_reproducibility.csv`, `tep_limits_comparison.csv` | Section 4.4, the 16.14 determinant ratio |
-| `28_console_pvalues.R` | `console_pvalues.csv` | Section 3.2, the five p-values |
-| `30_tep_ablation.R` | `tep_ablation.csv` | Table 10, ablation block |
+| `PHASE1_PIPELINE_STEP30.R` | no file; builds the batches | Called by the Tennessee Eastman scripts |
+| `SCRIPT_M4_TEP_final_mstar14.R` | `table_M4_final_A_limits.csv`, `table_M4_final_B_idv7.csv`, `table_M4_final_C_faults.csv`, `table_M4_final_D_step.csv`, `table_M4_final_E_center.csv` | Tables 18 and 19; Table 17, false alarm column; Section 4.5 |
+| `SCRIPT_M4b_TEP_D2_D4.R` | `table_M4b_D2_D4.csv`, `table_M4b_D3_summary.csv`, `table_M4b_D3_compositions.csv` | Sections 4.4 and 4.5 (determinant ratio, twenty compositions) |
+| `SCRIPT_M4c_TEP_center_weights.R` | `table_M4c_center_by_variable.csv`, `table_M4c_weights.csv`, `table_M4c_center_membership.csv` | Sections 4.4 and 4.7 |
+| `SCRIPT_M4d_TEP_competitors_verify.R` | `table_M4d_competitors_TEP.csv`, `table_M4d_mechanism.csv` | Section 4.5 (RMCD and MRCD on the Tennessee Eastman process) |
+| `SCRIPT_M4e_TEP_table12_mstar14.R` | `table_M4e_table12.csv` | Table 20 |
+| `SCRIPT_R1_04c_TEP_weighting.R` | `table_R1_04c_TEP_weighting.csv` | Section 4.4 (dependence on the units in the basic combination) |
+| `SCRIPT_V030_verify_TEP.R` | `table_R1_04f_TEP_final_units.csv` | Section 4.4 (the final method does not depend on the units) |
+| `SCRIPT_R3_02_computation_time_v030.R` | `table_R3_02_computation_time_v030.csv`, `sessionInfo_R3_02_v030.txt` | Section 2.5 and Discussion (computation time) |
+| `SCRIPT_Fig2_power_final.R` | figure only | Figure 2 |
+| `SCRIPT_Fig5_weights_final.R` | figure only | Figure 5 |
+| `SCRIPT_Fig6_control_charts_final.R` | `table_Fig6_T2_batches.csv` | Figure 6; Section 4.5 |
+| `SCRIPT_V_ucl_simulated_vs_M5.R` | no file | Checks that `ucl_simulated()` in the package reproduces the simulated limit of Table 5 |
 
-## Two notes on the result files
+Figures 1 and 3 are diagrams and do not come from any script. Table 14
+counts the comparisons in `table_M2_paired.csv`, `table_M2b_paired.csv`,
+`table_M2c_directions_paired.csv` and `table_M3_paired.csv`.
 
-`tep_limits_comparison.csv` does not appear as a table. It records the
-bootstrap limits computed on the Tennessee Eastman data, which rise to 54.98
-against the analytic 19.69, and is the empirical basis for the statement in
-Section 2.5 that the resampling alternatives were evaluated and discarded.
+## Notes on the result files
 
-`center_audit_summary.csv` and `weighted_center_audit_v4.csv` hold the same
-results. The first is rounded to four decimals by the consolidation script;
-the second keeps full precision and is the one to cite.
+Five files in `02_results/` are results of version 0.2.2 and do not support
+any table of the revised paper: `table_3_4_sensitivity.csv`,
+`table_3_4b_contamination.csv`, `table_3_4c_rho.csv`,
+`table_ablation_2x2_final.csv` and `phase2_stability_by_composition.csv`.
+They are kept because M2 reads them to check that the new code reproduces the
+numbers already published, and M4b takes the twenty Phase 2 compositions from
+the last one.
 
-`SCRIPT_FINAL_SIMULATIONS.R` also writes `table_3_2_calibration.csv`, which
-is an intermediate output that no table of the paper uses. It is not shipped
-here.
+`table_M5_TEP.csv` is a by-product of M5, computed with m* = 13, and is not
+cited in the paper.
 
+A few numbers in the text are simple operations on these files, for example
+the ratio between the first eigenvalue and the mean of the other three in
+Table A1.
 
 ## Notes on running the scripts
 
-`24_consolidate_center_audit.R` reads six intermediate files,
-`center_audit_v4_detail_scenario_0.csv` through `_5.csv`, which are written by
-`23_REFERENCE_CENTER_AUDIT_v4.R`. They are not shipped here, so script 23 has
-to be run before script 24.
-`19_acf_with_step1.R` reads `step_sensitivity_ljungbox.csv`, written by
-`SUBSAMPLING_STEP_SENSITIVITY.R`. It is not shipped here, so that script has
-to be run first.
+The run order is M1, M1b, M1c; M5, M5b; R1_10, M2, M2M3_diagnostics, M2b,
+M2c; M3, M3b; R1_04, R1_04e; R1_05. For the Tennessee Eastman process:
+TEP_VARIABLES_SUMMARY, 19_acf_with_step1, M4, M4b, M4c, M4d, M4e, R1_04c,
+V030_verify_TEP and R3_02. The figures come last. V_ucl_simulated_vs_M5
+needs the T² values of M5.
 
-`ZTEST_TABLE1_FAITHFUL_v2.R` and `SCRIPT_FINAL_SIMULATIONS.R` label the same
-classical limit slightly differently, as `Clasico (Montgomery)` and
-`Clasico Montgomery`. Both refer to the Phase II limit of Equation (3).
+`19_acf_with_step1.R` compares its results against
+`step_sensitivity_ljungbox.csv`, a version 0.2.2 file that is no longer
+shipped; if it is not found, the script issues a warning and carries on.
+
+The comments of some scripts cite the table numbering of an earlier draft.
+The table above uses the numbering of the paper.
 
 ## Label values in the result files
 
-The analysis was carried out in Spanish and some label values in the result
-files remain in that language. They are labels only: every numeric column is
-independent of them, and no result of the paper depends on the wording. The
-correspondence with the English terms used in the manuscript is as follows.
+The analysis was carried out in Spanish and some labels remain in that
+language, and the methods appear under their working names. They are labels
+only: every numeric column is independent of them. The correspondence with
+the paper is as follows.
 
 | In the files | In the paper |
 |---|---|
-| `limpia` / `contaminada` | clean / contaminated Phase 1 |
-| `pareado` / `no pareado` | paired / unpaired analysis |
-| `publicada` | the Phase 2 composition reported in Table 9 |
-| `sorteo_01` … `sorteo_19` | the nineteen redrawn compositions of Section 4.5 |
-| `Propuesto (AFM-MCD)` | Proposed (AFM-MCD) |
-| `Clasico (Hotelling)` | Classical (Hotelling) |
-| `Robusto F (m*)` | Robust F (m*) |
-| `Clasico (Montgomery)` | Classical (Montgomery) |
-| `Robusto F con K (actual)` | Robust F with K, as used |
-| `Robusto F con K_eff (Satterthwaite)` | Robust F with K_eff (Satterthwaite) |
-| `F analitico (actual)` / `F analitico (Ec. 8)` | Analytic F, Equation (8) |
-| `Bootstrap subconjunto MCD (centrado, escala corregida)` | MCD-subset bootstrap, centred and scale corrected |
-| `Bootstrap lote completo (centrado)` | Full-batch bootstrap, centred |
-| `Bootstrap ponderado por w_k (centrado)` | Bootstrap weighted by w_k, centred |
-| `Escalon fuerte` | Step disturbance, large mean shift (IDV 1) |
-| `Escalon moderado` | Step disturbance, moderate mean shift (IDV 7) |
-| `Casi indetectable` | Step disturbance, negligible mean shift (IDV 3) |
-| `Aleatorio` | Random variation (IDV 8) |
-| `Deriva lenta` | Slow drift (IDV 13) |
-| `0. Limpia (control negativo)` | Clean, negative control |
-| `1. Atipicos internos (paper)` | Within-batch outliers, the paper scenario |
-| `2. / 3. / 4. Desplazamiento puro N SD` | Pure shift of N standard deviations |
-| `5. Desplaz. 3 SD + covarianza x2` | Shift of 3 SD with covariance doubled |
-| `media simple lotes con fallo` | simple mean of the faulty batches |
-| `centro MCD lotes con fallo` | MCD center of the faulty batches |
-| `factor de recentrado` | recentring factor |
-| `centro de referencia mu_r` | reference center mu_r |
-
-The disturbance types follow Downs and Vogel (1993), Table 8, where IDV 1, 3
-and 7 are all step disturbances, IDV 8 is random variation and IDV 13 is a
-slow drift. The distinction between large, moderate and negligible shifts is
-ours, and rests on the measured mean shift each fault induces, reported in
-Table 10 of the paper.
+| `a_classical` | (a) classical chart |
+| `b_MCD_unif` | (b) MCD only |
+| `c_AFM_cls` | (c) MFA only |
+| `d_V7`, `V7` | (d) MCD + MFA, basic combination |
+| `e_NEW`, `NEW` | (e) MFA-MCD, the proposed method |
+| `f_MRCD` | MRCD |
+| `g_RMCD_pooled` | RMCD |
+| `AFM` | MFA (Multiple Factor Analysis) |
+| `D1`, `mD1` | joint increase, joint decrease |
+| `D2`, `D3`, `D4`, `mD4` | contrast, block contrast, single increase, single decrease |
+| `sano` / `fallo` | fault-free batch / faulty batch |
+| `limpia` / `contaminada`, `clean` / `contaminated` | clean / contaminated Phase 1 |
+| `publicada`; `sorteo_01` … `sorteo_19` | the Phase 2 composition of Table 18; the nineteen redrawn compositions of Section 4.5 |
+| `unidades`; `pesos` | units of measurement; how the weights are computed |
+| `ratio_sano_cont` | mean weight of the fault-free batches divided by that of the contaminated ones |
+| `fallo_en_6_menores`, `en_6_menores` | contaminated batches among the six lowest-weighted |
+| `deteccion_de_20`; `falsas_alarmas_de_10` | faulty batches detected out of 20; false alarms out of 10 |
+| `T2_med_sano`; `T2_min_fallo`; `T2_max_sano` | median T² of the fault-free batches; minimum T² of the faulty batches; maximum T² of the fault-free batches |
+| `max_dif_pesos` | largest difference in the weights when the units change |

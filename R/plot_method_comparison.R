@@ -91,7 +91,7 @@
 #' linear, and the package makes no such claim.
 #'
 #' @references
-#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., &
 #' Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
 #' combining the minimum covariance determinant estimator with multiple
 #' factor analysis weighting. Under review.

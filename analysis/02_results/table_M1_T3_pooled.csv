@@ -1,0 +1,11 @@
+"phase1","method","false_alarms","batches","ARL0","CI95_low","CI95_high"
+"clean","V7",729,1e+06,1372,1276,1477
+"clean","SM_std",792,1e+06,1263,1178,1355
+"clean","MCDc_V7w",964,1e+06,1037,974,1106
+"clean","NEW",974,1e+06,1027,964,1094
+"clean","CLASSICAL",981,1e+06,1019,958,1086
+"contaminated","V7",706,1e+06,1416,1316,1527
+"contaminated","SM_std",654,1e+06,1529,1416,1653
+"contaminated","MCDc_V7w",788,1e+06,1269,1183,1363
+"contaminated","NEW",795,1e+06,1258,1173,1350
+"contaminated","CLASSICAL",754,1e+06,1326,1235,1426

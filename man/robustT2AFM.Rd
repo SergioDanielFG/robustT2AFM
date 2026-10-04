@@ -40,7 +40,9 @@ variable.
 \item{The three steps it chains}{\code{\link{calibrate_afm_mcd}} for the
 Phase 1 reference, \code{\link{ucl_F_adjusted}} for the control
 limit, \code{\link{monitor_afm_mcd}} for the Phase 2 statistics.
-Call them directly when you want the pieces.}
+Call them directly when you want the pieces.
+\code{\link{ucl_simulated}} gives a simulated limit in place of
+the analytic one.}
 \item{The three charts}{\code{\link{plot_control_chart}} for the chart
 itself, \code{\link{plot_afm_weights}} to see which calibration
 batches carry the most internal dispersion, and
@@ -74,7 +76,7 @@ target.
 }
 
 \references{
-Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., &
 Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
 combining the minimum covariance determinant estimator with multiple
 factor analysis weighting. Under review.
@@ -83,6 +85,7 @@ factor analysis weighting. Under review.
 Useful links:
 \itemize{
   \item \url{https://github.com/SergioDanielFG/robustT2AFM}
+  \item \doi{10.5281/zenodo.21891576}
   \item Report bugs at \url{https://github.com/SergioDanielFG/robustT2AFM/issues}
 }
 
@@ -93,7 +96,7 @@ Useful links:
 Other contributors:
 \itemize{
   \item Omar Ruiz-Barzola \email{oruiz@espol.edu.ec} (\href{https://orcid.org/0000-0001-8206-1744}{ORCID}) [thesis advisor]
-  \item Jhon Ramírez \email{jramirez@espol.edu.ec} [thesis advisor]
+  \item John Ramirez-Figueroa \email{jramirez@espol.edu.ec} (\href{https://orcid.org/0000-0002-6605-8673}{ORCID}) [thesis advisor]
   \item Purificación Galindo-Villardón \email{pgalindo@usal.es} (\href{https://orcid.org/0000-0001-6977-7545}{ORCID}) [thesis advisor]
 }
 

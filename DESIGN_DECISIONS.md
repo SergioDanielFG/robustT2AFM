@@ -250,10 +250,27 @@ batches: the weight ranks dispersion, it does not classify batches.
 
 ## 5. Phase 1 batches of unequal size
 
-The control limit assumes a common batch size I, through `m* = round(I·h)`. The
-calibration itself does not need one: MCD, the weights, `Sw` and `mu_r` are all
-computed batch by batch and handle different sizes without difficulty. The limit
-does need one.
+The control limit assumes a common batch size I, through the effective size m*.
+The calibration itself does not need one: MCD, the weights, `Sw` and `mu_r` are
+all computed batch by batch and handle different sizes without difficulty. The
+limit does need one.
+
+**Since version 0.3.0, m* is the size of the MCD subset**,
+`robustbase::h.alpha.n(h, I, J)`, the number `covMcd` reports as `quan`: 14 for
+I = 20, J = 4 and h = 0.67. Version 0.2.0 used `round(I·h)` = 13, which is only
+the nominal fraction; the algorithm never works with 13 observations. The old
+rule is still available as `ucl_F_adjusted(..., m_star = "nominal")`. Three sizes
+are kept apart on purpose: the nominal fraction I·h = 13.4, the subset size
+h = 14 that m* uses, and the number of observations kept by the reweighting
+step, which varies from batch to batch and cannot be fixed in advance. In the
+simulation study, moving m* between 13 and 20 changed ARL0 by less than 10%.
+
+With unequal batches the logic below is unchanged, with the new m*:
+`I_phase1` is the **smallest** size whose m* equals the rounded mean of the
+`m*_k`. Several sizes now share the same m* (19 and 20 both give 14), so the
+correspondence is no longer one to one, but all of them give the same limit.
+The figures that follow (the 18.6%, the worked example and the UCL values) were
+obtained with the version 0.2.0 rule `round(I·h)`.
 
 In plant data unequal batches are the norm — one run stops early, another loses
 discarded measurements. When that happens there is no exact I, and one has to be

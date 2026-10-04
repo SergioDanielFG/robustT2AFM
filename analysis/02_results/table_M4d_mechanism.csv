@@ -1,0 +1,5 @@
+"source","RMCD_raw_keeps_contaminated","RMCD_rew_keeps_contaminated","RMCD_rew_share_contaminated","sd_ratio_xmv_9","sd_ratio_xmv_8","sd_ratio_xmeas_19","sd_ratio_xmeas_17","sd_ratio_max","mahal_contaminated_min","mahal_contaminated_mean"
+"TEP, Phase 1 with 6 IDV 7 batches",0.366666666666667,0.633333333333333,0.139963167587477,5.54794957775478,0.988201785651987,4.96589291214849,0.98881857423369,5.54794957775478,1.48283853481826,1.83023204965816
+"TEP, Phase 1 with 6 IDV 1 batches",0.075,0.125,0.0311203319502075,5.18550923202525,0.957981699121086,4.25260937061408,0.986602605888298,5.18550923202525,6.84694498685391,7.49272347744443
+"Simulation, block W, 6 batches shifted 1.5 sd (table_M3_W_diagnostic.csv)",0.501,0.942,0.194,1,1,1,1,1,1.79284291400159,1.79284291400159
+"Simulation, block W, 6 batches shifted 3.0 sd (table_M3_W_diagnostic.csv)",0.081,0.655,0.142,1,1,1,1,1,3.58568582800318,3.58568582800318

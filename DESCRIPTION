@@ -1,6 +1,6 @@
 Package: robustT2AFM
-Title: AFM-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes
-Version: 0.2.2
+Title: MFA-Weighted Robust Hotelling T-Squared Control Chart for Batch Processes
+Version: 0.3.0
 Authors@R: c(
     person("Sergio Daniel", "Frutos-Galarza", , "idu045235@usal.es",
            role = c("aut", "cre"),
@@ -21,6 +21,10 @@ Description: Implements a robust Hotelling T-squared control chart for batch
     covariances. The weighting reduces the influence of contaminated batches
     on the Phase I reference covariance, which keeps the chart sensitive to
     mean shifts in Phase II when the historical batches are not clean. The
+    weights are computed on a common robust scale of the variables, so they do
+    not depend on the units of measurement, and the reference centre is the
+    reweighted MCD of the batch centres, which resists whole batches shifted
+    in mean. The
     upper control limit is parametric, adjusted for the effective batch size
     left by MCD trimming; a bootstrap alternative was evaluated in the
     reference paper and discarded, so it is not implemented here. The method

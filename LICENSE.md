@@ -1,7 +1,7 @@
 # MIT License
 
 Copyright (c) 2026 Sergio Daniel Frutos-Galarza, Omar Ruiz-Barzola,
-Jhon Ramírez, Purificación Galindo-Villardón
+John Ramirez-Figueroa, Purificación Galindo-Villardón
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

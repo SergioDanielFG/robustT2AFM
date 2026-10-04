@@ -24,8 +24,20 @@
 #' @param mcd_alpha Numeric in (0.60, 0.90). Proportion of observations kept
 #'   by MCD within each Phase 1 batch. Default 0.67, as in
 #'   Frutos-Galarza et al. (2026).
+#' @param scaling,center,center_alpha Passed to
+#'   \code{\link{calibrate_afm_mcd}}: robust scaling of the variables before
+#'   the AFM weights (\code{"mad"} or \code{"none"}), reference center
+#'   (\code{"mcd"} of the batch centers or their \code{"mean"}) and the
+#'   proportion of centers kept by that MCD. Defaults as in
+#'   \code{calibrate_afm_mcd}; \code{scaling = "none", center = "mean"}
+#'   reproduces version 0.2.0.
 #' @param alpha Numeric in (0, 1). Nominal false-alarm rate for the control
 #'   limit. Default 0.001.
+#' @param m_star Passed to \code{\link{ucl_F_adjusted}}: \code{"subset"}
+#'   (default, m* = size of the MCD subset) or \code{"nominal"}
+#'   (m* = round(I * mcd_alpha), version 0.2.0). With
+#'   \code{scaling = "none", center = "mean", m_star = "nominal"} the whole
+#'   study reproduces version 0.2.0.
 #' @param plot Logical. If \code{TRUE} (default) the control chart is drawn
 #'   on the active graphics device. The weights plot is always built and
 #'   stored in \code{$weight_plot}, but never drawn automatically.
@@ -91,7 +103,7 @@
 #' alarm behaviour.
 #'
 #' @references
-#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., &
 #' Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
 #' combining the minimum covariance determinant estimator with multiple
 #' factor analysis weighting. Under review.
@@ -119,13 +131,20 @@ run_afm_mcd <- function(phase1,
                         phase2,
                         variables = NULL,
                         mcd_alpha = 0.67,
+                        scaling = c("mad", "none"),
+                        center = c("mcd", "mean"),
+                        center_alpha = 0.5,
                         alpha = 0.001,
+                        m_star = c("subset", "nominal"),
                         plot = TRUE,
                         compare_classical = FALSE,
                         save_path = NULL,
                         batch_col = "Batch") {
 
   this_call <- match.call()
+  scaling <- match.arg(scaling)
+  center  <- match.arg(center)
+  m_star  <- match.arg(m_star)
 
   # --- Input validation ---
   if (!is.data.frame(phase1)) {
@@ -183,9 +202,12 @@ run_afm_mcd <- function(phase1,
 
   # --- The four steps, in order, with nothing recomputed ---
   calibration <- calibrate_afm_mcd(phase1, variables, mcd_alpha = mcd_alpha,
+                                   scaling = scaling,
+                                   center = center,
+                                   center_alpha = center_alpha,
                                    batch_col = batch_col)
   limit       <- ucl_F_adjusted(calibration, I = calibration$I_phase1,
-                                alpha = alpha)
+                                alpha = alpha, m_star = m_star)
   monitoring  <- monitor_afm_mcd(phase2, calibration, variables,
                                  ucl = limit$UCL, batch_col = batch_col)
 

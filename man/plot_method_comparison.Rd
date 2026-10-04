@@ -157,7 +157,7 @@ plot_method_comparison(study, faulty = truth,
                        diagnostics = TRUE, near_miss = 0.20)
 }
 \references{
-Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., &
 Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
 combining the minimum covariance determinant estimator with multiple
 factor analysis weighting. Under review.

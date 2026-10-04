@@ -8,6 +8,9 @@ calibrate_afm_mcd(
   data,
   variables,
   mcd_alpha = 0.67,
+  scaling = c("mad", "none"),
+  center = c("mcd", "mean"),
+  center_alpha = 0.5,
   verbose = FALSE,
   batch_col = "Batch"
 )
@@ -21,6 +24,25 @@ identifying each batch; see \code{batch_col}.}
 \item{mcd_alpha}{Numeric in (0.60, 0.90). Proportion of observations retained
 by MCD. Default 0.67 (breakdown point = 0.33), the value used in
 Frutos-Galarza et al. (2026).}
+
+\item{scaling}{Character, \code{"mad"} (default) or \code{"none"}. With
+\code{"mad"}, each variable is divided by its median absolute deviation
+over all Phase 1 observations before the first eigenvalues are computed,
+so the AFM weights do not change when a variable is expressed in other
+units. The divisor is common to all batches, so a batch with inflated
+dispersion still stands out after scaling. \code{Sw} and \code{mu_r}
+are returned in the original units. \code{"none"} reproduces version
+0.2.0.}
+
+\item{center}{Character, \code{"mcd"} (default) or \code{"mean"}. With
+\code{"mcd"}, the reference center is the reweighted MCD location of the
+K batch centers, which is robust to whole batches shifted in mean and
+affine equivariant. \code{"mean"} takes the simple average of the batch
+centers and reproduces version 0.2.0.}
+
+\item{center_alpha}{Numeric in [0.5, 1). Proportion of batch centers kept by
+the MCD of the centers when \code{center = "mcd"}. Default 0.5, the value
+with the highest breakdown point.}
 
 \item{verbose}{Logical. If \code{TRUE}, a message listing the batches that
 were actually used for calibration is emitted. Default \code{FALSE}
@@ -47,20 +69,28 @@ most anomalous during Phase 1.}
 \item{mcd_alpha}{MCD alpha parameter used (for reference).}
 \item{I_phase1}{Observations per Phase 1 batch, recorded so the UCL can
 detect a mismatching I. When the batches are not all the same size
-this is the batch size whose m* equals the mean of the per-batch
-m*, which is not the mean batch size rounded; see Details.}
+this is the smallest batch size whose m* equals the mean of the
+per-batch m*, which is not the mean batch size rounded; see
+Details.}
 \item{batch_sizes}{Named integer vector with the size of every valid
 Phase 1 batch, so that downstream functions can check the
 equal-size assumption instead of trusting a single number.}
+\item{scale}{Divisor applied to each variable before the eigenvalues
+(all ones when \code{scaling = "none"}).}
+\item{scaling, center, center_alpha}{The options used, recorded so every
+calibration states how it was obtained.}
 }
 }
 \description{
 Estimates robust reference parameters for Phase 1 calibration of an AFM-weighted
-Hotelling T-squared control chart. For each batch, MCD estimators of location
-and scatter are computed. Batch covariance matrices are then combined into a
-global reference matrix using AFM inverse weighting based on first eigenvalues
-(Abdi, Williams & Valentin, 2013), which gives less influence to batches with higher
-dispersion. The global reference center is the average of the MCD batch centers.
+Hotelling T-squared control chart. For each batch, reweighted MCD estimators of
+location and scatter are computed. Batch covariance matrices are then combined
+into a global reference matrix using AFM inverse weighting based on first
+eigenvalues (Abdi, Williams & Valentin, 2013), which gives less influence to
+batches with higher dispersion. The eigenvalues are taken after putting the
+variables on a common robust scale (MAD), so the weights do not depend on the
+units of measurement. The global reference center is the reweighted MCD of the
+batch centers, which resists whole batches shifted in mean.
 }
 \details{
 AFM comes from \emph{Analyse Factorielle Multiple}; the English literature
@@ -76,15 +106,42 @@ The reference covariance matrix is:
 \deqn{S_w = \sum_k w_k S_k}
 where \eqn{S_k} is the MCD covariance of batch k.
 
+\strong{Scaling.} With \code{scaling = "mad"}, \eqn{\lambda_{1,k}} is the
+first eigenvalue of \eqn{D^{-1} S_k D^{-1}}, where \eqn{D} is the diagonal
+matrix of the MAD of each variable over all Phase 1 observations. Because
+the MCD is affine equivariant this equals fitting the MCD to the scaled
+data, and the weights are invariant to a change of units of any variable.
+Scaling each batch by its own dispersion (for example, using the batch
+correlation matrices) would remove the variance inflation that the weights
+rely on to recognise a contaminated batch; that is why the divisor is
+common to all batches.
+
+\strong{Reference center.} With \code{center = "mcd"}, \code{mu_r} is the
+reweighted MCD location of the K batch centers, computed with
+\code{robustbase::covMcd(alpha = center_alpha)}. It needs at least twice as
+many valid batches as variables; with fewer the function stops and asks
+for \code{center = "mean"}, instead of changing the method silently.
+
+Both MCD steps use FastMCD, which draws random subsets. The MCD of the
+centers runs under a fixed internal seed, so the same Phase 1 always gives
+the same \code{mu_r}, and the user's random number stream is restored
+afterwards. The seed only decides where the search starts, not what the
+optimum is; with 500 starts (the default of \code{covMcd}) different seeds
+reach the same subset or differ in the third decimal of the center. The
+per-batch MCD is not seeded internally, as in version 0.2.0: call
+\code{set.seed()} before the calibration to fix it.
+
 \strong{Batches of unequal size.} The calibration itself is well defined
 whatever the batch sizes: MCD, the weights, Sw and mu_r are computed per
 batch. The control limit is not: \code{\link{ucl_F_adjusted}} assumes a
-single common batch size I, through \eqn{m^* = round(I h)}. When the Phase 1
-batches differ in size the function warns and sets \code{I_phase1} to the
-batch size whose \eqn{m^*} equals the mean of the per-batch \eqn{m^*_k},
-that is \code{round(mean(round(I_k * h)) / h)}. This is \strong{not} the
-same as rounding the mean batch size: the two disagree for roughly one
-calibration in five.
+single common batch size I, through \eqn{m^*}, the size of the MCD subset
+of a batch of that size (\code{robustbase::h.alpha.n(mcd_alpha, I, J)}).
+When the Phase 1 batches differ in size the function warns and sets
+\code{I_phase1} to the smallest batch size whose \eqn{m^*} equals the
+rounded mean of the per-batch \eqn{m^*_k}; several sizes can share the
+same \eqn{m^*}, and all of them give the same limit. This is
+\strong{not} the same as rounding the mean batch size, and the two can
+disagree.
 }
 \examples{
 # 30 historical batches, 6 of them carrying outlying observations.
@@ -105,12 +162,20 @@ cal2 <- calibrate_afm_mcd(lots, paste0("Var", 1:4), batch_col = "Lote")
 
 # To see which batches were actually used, ask for it:
 cal_v <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4), verbose = TRUE)
+
+# The calibration of version 0.2.0 (raw weights, average of the centers):
+cal_020 <- calibrate_afm_mcd(afm_phase1, paste0("Var", 1:4),
+                             scaling = "none", center = "mean")
 }
 \references{
 Abdi, H., Williams, L. J., & Valentin, D. (2013). Multiple factor analysis:
 principal component analysis for multitable and multiblock data sets.
 \emph{Wiley Interdisciplinary Reviews: Computational Statistics}, 5(2),
 149-179. \doi{10.1002/wics.1246}
+
+Hubert, M., Debruyne, M., & Rousseeuw, P. J. (2018). Minimum covariance
+determinant and extensions. \emph{Wiley Interdisciplinary Reviews:
+Computational Statistics}, 10(3), e1421. \doi{10.1002/wics.1421}
 
 Rousseeuw, P. J., & Van Driessen, K. (1999). A fast algorithm for the
 minimum covariance determinant estimator. Technometrics, 41(3), 212-223.

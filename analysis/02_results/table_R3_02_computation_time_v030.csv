@@ -1,0 +1,29 @@
+"setting","K","I","J","step","median_ms","p10_ms","p90_ms"
+"Base (Section 3)",30,20,4,"calibrate_afm_mcd (Phase 1)",200,110,270
+"Base (Section 3)",30,20,4,"classical calibration (reference)",20,10,30
+"Base (Section 3)",30,20,4,"MCD of the K centers (comment 7)",0,0,20
+"Base (Section 3)",30,20,4,"ucl_F_adjusted",0,0,0
+"Base (Section 3)",30,20,4,"monitor_afm_mcd, one batch",0,0,1
+"Base (Section 3)",30,20,4,"ucl_simulated (B = 500, n_new = 200)",121700,95956,124476
+"K = 100",100,20,4,"calibrate_afm_mcd (Phase 1)",720,700,802
+"K = 100",100,20,4,"classical calibration (reference)",90,80,110
+"K = 100",100,20,4,"MCD of the K centers (comment 7)",20,10,30
+"K = 100",100,20,4,"ucl_F_adjusted",0,0,0
+"K = 100",100,20,4,"monitor_afm_mcd, one batch",0,0,11
+"K = 300",300,20,4,"calibrate_afm_mcd (Phase 1)",2180,2140,2280
+"K = 300",300,20,4,"classical calibration (reference)",380,360,420
+"K = 300",300,20,4,"MCD of the K centers (comment 7)",60,40,70
+"K = 300",300,20,4,"ucl_F_adjusted",0,0,0
+"K = 300",300,20,4,"monitor_afm_mcd, one batch",0,0,20
+"I = 50",30,50,4,"calibrate_afm_mcd (Phase 1)",370,360,390
+"I = 50",30,50,4,"classical calibration (reference)",30,10,40
+"I = 50",30,50,4,"MCD of the K centers (comment 7)",10,0,20
+"I = 50",30,50,4,"ucl_F_adjusted",0,0,0
+"I = 50",30,50,4,"monitor_afm_mcd, one batch",0,0,11
+"J = 8",30,20,8,"calibrate_afm_mcd (Phase 1)",410,390,430
+"J = 8",30,20,8,"classical calibration (reference)",30,30,50
+"J = 8",30,20,8,"MCD of the K centers (comment 7)",20,0,30
+"J = 8",30,20,8,"ucl_F_adjusted",0,0,0
+"J = 8",30,20,8,"monitor_afm_mcd, one batch",0,0,10
+"Tennessee Eastman (Section 4)",30,20,4,"calibrate_afm_mcd (Phase 1)",210,190,230
+"Tennessee Eastman (Section 4)",30,20,4,"ucl_simulated (B = 500, n_new = 200)",106890,105042,107314

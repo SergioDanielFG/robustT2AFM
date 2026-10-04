@@ -1,0 +1,12 @@
+"cell","quan_raw_subset","kept_after_reweighting_clean","kept_after_reweighting_contaminated"
+"T1_K30_contam",14,16.735,15.667
+"T3_b2026_clean",14,16.743,NA
+"T3_b2026_contam",14,16.732,15.677
+"T3_b20000_clean",14,16.74,NA
+"T3_b20000_contam",14,16.74,15.682
+"T3_b40000_clean",14,16.743,NA
+"T3_b40000_contam",14,16.729,15.7
+"T3_b60000_clean",14,16.747,NA
+"T3_b60000_contam",14,16.738,15.692
+"T3_b80000_clean",14,16.729,NA
+"T3_b80000_contam",14,16.734,15.677

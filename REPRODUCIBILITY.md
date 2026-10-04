@@ -1,5 +1,9 @@
 # Reproducibility
 
+> Note: this file documents the anchors of version 0.2 of the package. For
+> version 0.3.0 and the revised paper, the scripts in `analysis/01_scripts/`
+> check their own anchors; see `analysis/README.md`.
+
 Numeric anchors, fixed parameters and seeds for the results reported in
 Frutos-Galarza et al. (2026). Any change to the package must leave these
 values untouched.

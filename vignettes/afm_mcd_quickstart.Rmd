@@ -181,7 +181,7 @@ plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
 
 - **Top-left summary** ("N OOC / total (X%)"): how many Phase 2 batches
   crossed the UCL and what fraction of the run that is.
-- **UCL label** ("UCL = 19.7  (alpha = 0.001)"): the limit itself and
+- **UCL label** ("UCL = 19.6  (alpha = 0.001)"): the limit itself and
   the nominal false-alarm rate, so anyone reading the report knows the
   chart's ARL0.
 - **Red batch labels** (e.g. `F2_B12`): the batches to investigate.
@@ -212,35 +212,36 @@ plot_control_chart(mon, UCL = ucl$UCL, alpha = ucl$parameters$alpha,
 **Too few observations per batch for MCD.** MCD needs enough rows per
 batch to fit a trimmed covariance. Practical minimum: `I >= J + 2`
 (e.g. `J = 4` implies `I >= 6`); the package aborts calibration if
-fewer than two batches survive. Effective batch size is `m* = round(I*h)`
-with `h = 0.67`, so the F-adjusted UCL loses degrees of freedom when I
-is small. Rule of thumb: aim for `m* >= 2 * J`. If your history is
+fewer than two batches survive. The effective batch size m* is the size
+of the MCD subset, `robustbase::h.alpha.n(0.67, I, J)` (14 for `I = 20`,
+`J = 4`), so the F-adjusted UCL loses degrees of freedom when I is
+small. Rule of thumb: aim for `m* >= 2 * J`. If your history is
 thin (say `K1 < 5` or `I < 8`), the UCL becomes conservative and
 unstable; collect more calibration data before going live.
 
 **Variables on very different scales.** MCD itself is
 affine-equivariant, so per-batch estimation is unaffected by scale
-differences. But the AFM weights rank batches by their largest
-eigenvalue, so a variable with much larger natural variance will
-dominate `lambda1` and drive the weights. Standardize using **Phase 1
-statistics only**, then apply the same shift and scale to Phase 2:
+differences. The AFM weights rank batches by their largest eigenvalue,
+so without care a variable with much larger natural variance would
+dominate `lambda1` and drive the weights. Since version 0.3.0 this is
+handled by default: with `scaling = "mad"` each variable is divided by
+its median absolute deviation over all Phase 1 observations before the
+eigenvalues are computed, so the weights and the T2 statistics do not
+change when a variable is expressed in other units. No manual
+standardization is needed, and `Sw` and `mu_r` are returned in the
+original units.
 
-```r
-mu_p1 <- colMeans(phase1[vars])
-sd_p1 <- apply(phase1[vars], 2, sd)
-phase1[vars] <- scale(phase1[vars], center = mu_p1, scale = sd_p1)
-phase2[vars] <- scale(phase2[vars], center = mu_p1, scale = sd_p1)
-```
-
-Never restandardize a new batch with its own mean and SD - that erases
-the mean shift you are trying to detect.
+If you do rescale the data yourself, use **Phase 1 statistics only**
+and apply the same shift and scale to Phase 2. Never restandardize a
+new batch with its own mean and SD - that erases the mean shift you are
+trying to detect.
 
 **S_w looks singular in Phase 2.** When two variables are almost
 collinear (correlation above ~0.99), `S_w` can be numerically singular
 and `monitor_afm_mcd()` cannot invert it. It stops with an error that
 names the likely cause and what to do, rather than the raw message from
 `solve()`. The two fixes it suggests: drop the redundant variable, or
-increase I so that `m* = round(I * 0.67) > J` with margin (again,
+increase I so that m* (the MCD subset size) exceeds J with margin (again,
 `m* >= 2 * J` is a good target).
 
 A constant column produces the same failure, and that is worth knowing
@@ -255,8 +256,8 @@ not name them.
 one run stops early, another loses discarded rows. Calibration copes
 with that, but the control limit assumes a single batch size I, so
 there is no exact limit for such a calibration.
-`calibrate_afm_mcd()` warns and records `I_phase1` as the size whose
-`m*` equals the average of the per-batch `m*`, which is what matches
+`calibrate_afm_mcd()` warns and records `I_phase1` as the smallest size
+whose `m*` equals the average of the per-batch `m*`, which is what matches
 the degrees of freedom of the covariance estimate. The full vector is
 in `calibration$batch_sizes`. To choose the value yourself, pass it:
 
@@ -266,7 +267,7 @@ ucl <- ucl_F_adjusted(cal, I = 18)
 
 ## Reference
 
-Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramírez, J., Galindo-Villardón, P.
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., Galindo-Villardón, P.
 (2026). *A Robust Hotelling-Type T2 Control Chart Combining the Minimum
 Covariance Determinant Estimator with Multiple Factor Analysis Weighting.*
-Manuscript in preparation.
+Under review.

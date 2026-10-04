@@ -9,7 +9,11 @@ run_afm_mcd(
   phase2,
   variables = NULL,
   mcd_alpha = 0.67,
+  scaling = c("mad", "none"),
+  center = c("mcd", "mean"),
+  center_alpha = 0.5,
   alpha = 0.001,
+  m_star = c("subset", "nominal"),
   plot = TRUE,
   compare_classical = FALSE,
   save_path = NULL,
@@ -37,8 +41,22 @@ measurements.}
 by MCD within each Phase 1 batch. Default 0.67, as in
 Frutos-Galarza et al. (2026).}
 
+\item{scaling, center, center_alpha}{Passed to
+\code{\link{calibrate_afm_mcd}}: robust scaling of the variables before
+the AFM weights (\code{"mad"} or \code{"none"}), reference center
+(\code{"mcd"} of the batch centers or their \code{"mean"}) and the
+proportion of centers kept by that MCD. Defaults as in
+\code{calibrate_afm_mcd}; \code{scaling = "none", center = "mean"}
+reproduces version 0.2.0.}
+
 \item{alpha}{Numeric in (0, 1). Nominal false-alarm rate for the control
 limit. Default 0.001.}
+
+\item{m_star}{Passed to \code{\link{ucl_F_adjusted}}: \code{"subset"}
+(default, m* = size of the MCD subset) or \code{"nominal"}
+(m* = round(I * mcd_alpha), version 0.2.0). With
+\code{scaling = "none", center = "mean", m_star = "nominal"} the whole
+study reproduces version 0.2.0.}
 
 \item{plot}{Logical. If \code{TRUE} (default) the control chart is drawn
 on the active graphics device. The weights plot is always built and
@@ -138,7 +156,7 @@ summary(run_afm_mcd(afm_phase1, afm_phase2, plot = FALSE,
                     compare_classical = TRUE))
 }
 \references{
-Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., &
 Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
 combining the minimum covariance determinant estimator with multiple
 factor analysis weighting. Under review.

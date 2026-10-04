@@ -9,7 +9,8 @@ test_that("calibrate_afm_mcd returns a coherent AFM/MCD reference", {
   expect_type(cal, "list")
   expect_named(cal, c("mu_r", "Sw", "weights", "mcd_centers",
                       "mcd_covariances", "lambda1", "mcd_alpha", "I_phase1",
-                      "batch_sizes"))
+                      "batch_sizes", "scale", "scaling", "center",
+                      "center_alpha"))
   # mcd_clean_obs was removed together with the bootstrap UCL.
   expect_false("mcd_clean_obs" %in% names(cal))
 
@@ -35,36 +36,39 @@ test_that("calibrate_afm_mcd returns a coherent AFM/MCD reference", {
 })
 
 test_that("unequal Phase 1 batches are announced and not silently averaged over", {
+  # 5-6 batches are fewer than 2J = 8: the MCD of the centers needs more,
+  # so these tests of other features use center = "mean" (version 0.3.0).
   sim  <- simulate_batch_process(K1 = 6, K2 = 0, I = 20, J = 4,
                                  seed = 20260425)
   vars <- paste0("Var", 1:4)
 
   # Equal batches: silent, and I_phase1 is that size.
-  cal_eq <- calibrate_afm_mcd(sim, vars)
+  cal_eq <- calibrate_afm_mcd(sim, vars, center = "mean")
   expect_equal(cal_eq$I_phase1, 20L)
   expect_equal(unname(cal_eq$batch_sizes), rep(20L, 6))
 
   # Two shortened batches, as happens when a run stops early or rows are
-  # discarded. Sizes 14, 17, 20, 20, 20, 20: the per-batch m* are 9, 11 and
-  # 13 x 4, whose mean is 12, and the I giving m* = 12 is round(12/0.67) = 18.
+  # discarded. Sizes 14, 17, 20, 20, 20, 20: the per-batch m* (MCD subset
+  # sizes, robustbase::h.alpha.n) are 10, 13 and 14 x 4, whose mean 13.17
+  # rounds to 13, and the smallest I giving m* = 13 is 17.
   drop <- c(rownames(sim[sim$Batch == "F1_B01", ])[1:6],
             rownames(sim[sim$Batch == "F1_B02", ])[1:3])
   uneq <- sim[!rownames(sim) %in% drop, ]
 
-  expect_warning(cal_un <- calibrate_afm_mcd(uneq, vars),
+  expect_warning(cal_un <- calibrate_afm_mcd(uneq, vars, center = "mean"),
                  "do not all have the same number of observations")
-  expect_warning(calibrate_afm_mcd(uneq, vars), "range from 14 to 20")
-  expect_warning(calibrate_afm_mcd(uneq, vars), "4 of the 6 batches have 20")
-  expect_warning(calibrate_afm_mcd(uneq, vars), "equals 12")
-  expect_warning(calibrate_afm_mcd(uneq, vars), "ucl_F_adjusted\\(calibration")
+  expect_warning(calibrate_afm_mcd(uneq, vars, center = "mean"), "range from 14 to 20")
+  expect_warning(calibrate_afm_mcd(uneq, vars, center = "mean"), "4 of the 6 batches have 20")
+  expect_warning(calibrate_afm_mcd(uneq, vars, center = "mean"), "equals 13")
+  expect_warning(calibrate_afm_mcd(uneq, vars, center = "mean"), "ucl_F_adjusted\\(calibration")
 
   expect_equal(unname(cal_un$batch_sizes), c(14L, 17L, 20L, 20L, 20L, 20L))
-  expect_equal(cal_un$I_phase1, 18L)          # not the first batch (14)
+  expect_equal(cal_un$I_phase1, 17L)          # not the first batch (14)
 
   # The recorded size no longer depends on which batch happens to come first.
   rev_order <- uneq[order(uneq$Batch, decreasing = TRUE), ]
   expect_equal(suppressWarnings(
-    calibrate_afm_mcd(rev_order, vars)$I_phase1), cal_un$I_phase1)
+    calibrate_afm_mcd(rev_order, vars, center = "mean")$I_phase1), cal_un$I_phase1)
 })
 
 test_that("I_phase1 follows mean(m*_k), not the rounded mean batch size", {
@@ -72,24 +76,27 @@ test_that("I_phase1 follows mean(m*_k), not the rounded mean batch size", {
                                  seed = 20260425)
   vars <- paste0("Var", 1:4)
 
-  # Sizes 11, 11, 12, 20, 20, 20 is a case where the two rules disagree:
-  #   mean(round(I_k * h))       = (7 + 7 + 8 + 13*3)/6 = 10.167 -> m* = 10
-  #     -> I = round(10/0.67)    = 15
-  #   round(mean(I_k) * h)       = round(round(15.667) * 0.67) = 11  -> I = 16
-  drop <- c(rownames(sim[sim$Batch == "F1_B01", ])[1:9],
-            rownames(sim[sim$Batch == "F1_B02", ])[1:9],
+  # Sizes 10, 12, 12, 20, 20, 20 is a case where the two rules disagree:
+  #   per-batch m* (MCD subset sizes) = 8, 9, 9, 14, 14, 14, mean 11.33 -> 11
+  #     -> smallest I with m* = 11   = 15
+  #   rounded mean batch size       = round(15.667) = 16
+  drop <- c(rownames(sim[sim$Batch == "F1_B01", ])[1:10],
+            rownames(sim[sim$Batch == "F1_B02", ])[1:8],
             rownames(sim[sim$Batch == "F1_B03", ])[1:8])
   uneq <- sim[!rownames(sim) %in% drop, ]
 
-  cal <- suppressWarnings(calibrate_afm_mcd(uneq, vars))
-  expect_equal(unname(cal$batch_sizes), c(11L, 11L, 12L, 20L, 20L, 20L))
+  # 6 batches < 2J = 8: this test of I_phase1 uses center = "mean" (0.3.0).
+  cal <- suppressWarnings(calibrate_afm_mcd(uneq, vars, center = "mean"))
+  expect_equal(unname(cal$batch_sizes), c(10L, 12L, 12L, 20L, 20L, 20L))
   expect_equal(cal$I_phase1, 15L)             # the m*-matching size
   expect_false(cal$I_phase1 == 16L)           # not the rounded mean size
 
   # And the recorded size really does reproduce the intended m*.
-  expect_equal(round(cal$I_phase1 * cal$mcd_alpha), 10)
+  expect_equal(robustbase::h.alpha.n(cal$mcd_alpha, cal$I_phase1, 4), 11)
   expect_equal(suppressWarnings(
-    ucl_F_adjusted(cal, I = cal$I_phase1)$parameters$m_star), 10)
+    ucl_F_adjusted(cal, I = cal$I_phase1)$parameters$m_star), 11)
+  # I = 14 falls short of it, so 15 is the smallest size that reaches m* = 11.
+  expect_equal(robustbase::h.alpha.n(cal$mcd_alpha, 14, 4), 10)
 })
 
 test_that("ucl_F_adjusted reports that an unequal calibration has no exact I", {
@@ -174,19 +181,21 @@ test_that("calibrate_afm_mcd rejects non-finite values naming the batch", {
 })
 
 test_that("calibrate_afm_mcd is silent by default and talks under verbose", {
+  # 5-6 batches are fewer than 2J = 8: the MCD of the centers needs more,
+  # so these tests of other features use center = "mean" (version 0.3.0).
   sim  <- simulate_batch_process(K1 = 5, K2 = 0, I = 20, J = 4,
                                  seed = 20260417)
   vars <- paste0("Var", 1:4)
 
   # Default: no message at all (scripts no longer need suppressMessages()).
-  expect_silent(calibrate_afm_mcd(sim, vars))
+  expect_silent(calibrate_afm_mcd(sim, vars, center = "mean"))
 
   # verbose = TRUE restores the historical listing of valid batches.
-  expect_message(calibrate_afm_mcd(sim, vars, verbose = TRUE),
+  expect_message(calibrate_afm_mcd(sim, vars, center = "mean", verbose = TRUE),
                  "Valid batches used for calibration \\(5\\)")
 
   # verbose does not touch the numbers.
-  cal_quiet <- calibrate_afm_mcd(sim, vars)
-  cal_loud  <- suppressMessages(calibrate_afm_mcd(sim, vars, verbose = TRUE))
+  cal_quiet <- calibrate_afm_mcd(sim, vars, center = "mean")
+  cal_loud  <- suppressMessages(calibrate_afm_mcd(sim, vars, center = "mean", verbose = TRUE))
   expect_identical(cal_quiet, cal_loud)
 })

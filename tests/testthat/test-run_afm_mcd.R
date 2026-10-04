@@ -85,13 +85,14 @@ test_that("auto-detection would pick up numeric identifier columns", {
   # message is the only thing standing between the user and this.
   expect_true(all(is.finite(study$monitoring$T2)))
 
-  # A constant identifier is caught instead: Sw becomes singular. covMcd
-  # warns once per batch on the way, hence the suppressWarnings().
+  # A constant identifier is caught instead. Since version 0.3.0 the robust
+  # scaling stops first and names the column (its MAD is zero); before, the
+  # same data ended in a singular Sw.
   p1$runId <- 1L
   p2$runId <- 1L
   expect_error(
     suppressWarnings(suppressMessages(run_afm_mcd(p1, p2, plot = FALSE))),
-    "singular and cannot be inverted"
+    "zero median absolute deviation in Phase 1, so they cannot be put on a common scale: runId"
   )
 })
 

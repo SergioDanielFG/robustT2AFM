@@ -1,0 +1,13 @@
+"chart","m_star","test","counts","statistic","p_value","difference","SE","CI95_low","CI95_high","correlation"
+"V7",13,"Table 1: two-proportion z, robust vs classical","125/146",1.62840952051288,0.201923175404219,NA,NA,NA,NA,NA
+"V7",13,"Table 1: Fisher exact, robust vs classical","125/146",NA,0.224174725743826,NA,NA,NA,NA,NA
+"V7",13,"Table 1: paired t, FAR robust - classical","125/146",-1.75702429053309,0.0790667453201972,-0.000105,5.97601299912265e-05,-0.000222198663801871,1.21986638018711e-05,0.502731424793391
+"V7",13,"Table 2: chi-square homogeneity across K","125/111/133/115/123",2.46607680977675,0.650720392664498,NA,NA,NA,NA,NA
+"V7",13,"Table 2: Cochran-Armitage trend in K","125/111/133/115/123",0.00398592990918143,0.949659623924169,NA,NA,NA,NA,NA
+"V7",13,"Table 3: two-proportion z, clean vs contaminated","729/706",0.368905804897592,0.543601303103876,NA,NA,NA,NA,NA
+"NEW",14,"Table 1: two-proportion z, robust vs classical","164/146",1.04597191855946,0.306436617545844,NA,NA,NA,NA,NA
+"NEW",14,"Table 1: Fisher exact, robust vs classical","164/146",NA,0.334098731509092,NA,NA,NA,NA,NA
+"NEW",14,"Table 1: paired t, FAR robust - classical","164/146",1.32723021799805,0.184584102976577,9e-05,6.78103909778013e-05,-4.29864445684361e-05,0.000222986444568436,0.466310234850344
+"NEW",14,"Table 2: chi-square homogeneity across K","181/128/132/120/123",18.4834028814891,0.000992549494023151,NA,NA,NA,NA,NA
+"NEW",14,"Table 2: Cochran-Armitage trend in K","181/128/132/120/123",4.78245879621783,0.0287510405404128,NA,NA,NA,NA,NA
+"NEW",14,"Table 3: two-proportion z, clean vs contaminated","995/804",20.2967449710175,6.63133033367646e-06,NA,NA,NA,NA,NA

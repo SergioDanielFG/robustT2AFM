@@ -1,0 +1,9 @@
+"item","phase1","chart","quantity","value","contaminated_in_6_lowest"
+"D2","IDV 7","V7","inflation det(S_classical)/det(S_w)",16.1350707650745,NA
+"D2","IDV 7","NEW","inflation det(S_classical)/det(S_w)",15.4824374364249,NA
+"D2","IDV 1","V7","inflation det(S_classical)/det(S_w)",9.18434590762068,NA
+"D2","IDV 1","NEW","inflation det(S_classical)/det(S_w)",8.05175736107777,NA
+"D4","IDV 7","V7","weight ratio healthy/contaminated",6.43940251603392,6
+"D4","IDV 7","NEW","weight ratio healthy/contaminated",4.02260502586395,6
+"D4","IDV 1","V7","weight ratio healthy/contaminated",7.0850811597119,6
+"D4","IDV 1","NEW","weight ratio healthy/contaminated",4.30892395191414,6

@@ -31,7 +31,9 @@
 #'   \item{The three steps it chains}{\code{\link{calibrate_afm_mcd}} for the
 #'         Phase 1 reference, \code{\link{ucl_F_adjusted}} for the control
 #'         limit, \code{\link{monitor_afm_mcd}} for the Phase 2 statistics.
-#'         Call them directly when you want the pieces.}
+#'         Call them directly when you want the pieces.
+#'         \code{\link{ucl_simulated}} gives a simulated limit in place of
+#'         the analytic one.}
 #'   \item{The three charts}{\code{\link{plot_control_chart}} for the chart
 #'         itself, \code{\link{plot_afm_weights}} to see which calibration
 #'         batches carry the most internal dispersion, and
@@ -62,7 +64,7 @@
 #' target.
 #'
 #' @references
-#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez, J., &
+#' Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., &
 #' Galindo-Villardon, P. (2026). A robust Hotelling-type T2 control chart
 #' combining the minimum covariance determinant estimator with multiple
 #' factor analysis weighting. Under review.

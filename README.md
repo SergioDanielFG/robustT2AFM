@@ -1,6 +1,6 @@
 # robustT2AFM
 
-AFM-Weighted Robust T-Squared Control Chart for Batch Processes
+MFA-Weighted Robust T-Squared Control Chart for Batch Processes
 
 ## Overview
 
@@ -8,12 +8,18 @@ This package implements a robust multivariate statistical process control
 chart for batch manufacturing. The method combines:
 
 - Minimum Covariance Determinant (MCD) estimation per batch
-- Multiple Factor Analysis (AFM) weighting of batch covariances (w = 1/lambda1)
+- Multiple Factor Analysis (MFA) weighting of batch covariances (w = 1/lambda1)
 - Parametric F-adjusted upper control limit (`ucl_F_adjusted`) computed with
-  the effective batch size m* = round(I * h). The paper discussed a bootstrap
-  alternative only to discard it, so it is not implemented here. The classical
-  Hotelling limit is also available, through `hotelling_classical_ucl()`, as
-  the non-robust benchmark.
+  the effective batch size m*, the size of the MCD subset of each batch
+  (14 for I = 20, J = 4, h = 0.67).
+- Simulated upper control limit (`ucl_simulated`, since version 0.3.0): the
+  whole method is recalibrated on synthetic Phase 1 samples drawn from the
+  robust estimates, which removes the conservatism of the analytic limit when
+  there are many Phase 1 batches. Resampling the observed data (the
+  nonparametric bootstrap discussed in the paper) is still not implemented,
+  because it carries the contamination of the sample into the limit. The
+  classical Hotelling limit is also available, through
+  `hotelling_classical_ucl()`, as the non-robust benchmark.
 - Publication-quality control chart with out-of-control batches highlighted
   and labelled for quality engineers, and one-line export to PNG + PDF
 
@@ -26,7 +32,7 @@ T-squared suffers from masking effects.
 The chart detects shifts of the mean vector. Changes in the covariance
 structure require different statistics and are out of scope.
 
-The AFM weights protect the reference covariance further than they protect
+The MFA weights protect the reference covariance further than they protect
 the reference centre: they act on dispersion, not on position, so a
 calibration batch that is wholly displaced keeps its weight. On the Tennessee
 Eastman data a mild displacement moved the centre by 0.06 standard deviations
@@ -56,7 +62,7 @@ cal  <- calibrate_afm_mcd(afm_phase1, vars)
 ucl  <- ucl_F_adjusted(cal, I = 20)
 mon  <- monitor_afm_mcd(afm_phase2, cal, vars, ucl = ucl$UCL)
 plot_control_chart(mon, UCL = ucl$UCL,
-                   method_label = "AFM-MCD Control Chart - Phase 2",
+                   method_label = "MFA-MCD Control Chart - Phase 2",
                    alpha = ucl$parameters$alpha)
 
 # If your batch column is not called "Batch":
@@ -71,12 +77,12 @@ remotes::install_github("SergioDanielFG/robustT2AFM")
 
 ## Citation
 
-Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramírez, J., Galindo-Villardón, P.
+Frutos-Galarza, S. D., Ruiz-Barzola, O., Ramirez-Figueroa, J., Galindo-Villardón, P.
 (2026). A Robust Hotelling-Type T2 Control Chart Combining the Minimum
 Covariance Determinant Estimator with Multiple Factor Analysis Weighting.
-Subbmited.
+Under review.
 
 ## License
 
 MIT (c) 2026 Sergio Daniel Frutos-Galarza, Omar Ruiz-Barzola,
-Jhon Ramírez, Purificación Galindo-Villardón
+John Ramirez-Figueroa, Purificación Galindo-Villardón

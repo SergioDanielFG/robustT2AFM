@@ -1,0 +1,13 @@
+"setting","phase1","phase2","chart","limit","UCL","det","fa","T2_med_sano","T2_min_fallo","min_faulty_over_UCL"
+"A1","IDV 7","IDV 7","MRCD","simulated",21.36238,20,0,2.1,23,1.07665906139672
+"A1","IDV 7","IDV 7","RMCD_pooled","simulated",19.67743,20,0,3.1,46.9,2.38344133354813
+"A2","IDV 7","IDV 1","MRCD","simulated",21.36238,20,0,2.1,698.9,32.7163920873985
+"A2","IDV 7","IDV 1","RMCD_pooled","simulated",19.67743,20,0,3.1,865.1,43.9640745768121
+"A2","IDV 7","IDV 13","MRCD","simulated",21.36238,20,0,2.1,191.1,8.94563246230055
+"A2","IDV 7","IDV 13","RMCD_pooled","simulated",19.67743,20,0,3.1,683.6,34.7403090749148
+"A2","IDV 7","IDV 8","MRCD","simulated",21.36238,20,0,2.1,33,1.54477169678659
+"A2","IDV 7","IDV 8","RMCD_pooled","simulated",19.67743,20,0,3.1,96.7,4.91425963654807
+"A2","IDV 7","IDV 3","MRCD","simulated",21.36238,0,0,2.1,0.9,0.0421301371850889
+"A2","IDV 7","IDV 3","RMCD_pooled","simulated",19.67743,0,0,3.1,1,0.0508196446385529
+"A3","IDV 1","IDV 7","MRCD","simulated",21.41857,18,0,1.8,19.3,0.901087234115069
+"A3","IDV 1","IDV 7","RMCD_pooled","simulated",19.67743,20,0,3,42.8,2.17508079053006
